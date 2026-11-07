@@ -1,4 +1,4 @@
-m<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -145,7 +145,7 @@ h3{font-size:1rem;margin:22px 0 8px}
 .kvi{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--ln)}.kvi:last-child{border:0}.kvi span{color:var(--mu)}.kvi b{font-weight:500;text-align:right}
 tr[data-an]{cursor:pointer}tr.sel td{background:color-mix(in srgb,var(--ac) 10%,transparent)}
 #an-nc{margin-top:4px}
-.ic{background:none;border:0;color:var(--mu);cursor:pointer;padding:2px 5px;vertical-align:middle}.ic:hover{color:var(--ac)}.ic.ok{color:var(--ok)}
+button.ic{background:none;border:0;color:var(--mu);cursor:pointer;padding:2px 5px;vertical-align:middle}button.ic:hover{color:var(--ac)}button.ic.ok{color:var(--ok)}
 .eye{display:inline-flex;padding:6px;border:1px solid var(--ln);border-radius:8px;color:var(--mu)}.eye:hover{color:var(--ac);text-decoration:none}
 .pillx{display:inline-block;padding:2px 12px;margin-right:6px;border:1px solid var(--ln);border-radius:8px;background:color-mix(in srgb,var(--ink) 5%,transparent);font-size:.84rem}.pillx.m{padding:2px 8px;color:var(--mu)}
 .prg{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;margin-right:-4px;border-radius:50%;border:2px solid var(--pn);color:#fff;font-size:.6rem;font-weight:700}
@@ -156,6 +156,22 @@ sub{font-size:.7em}.hbtn+.hbtn{margin-left:0}
 .heat{display:grid;grid-template-columns:44px repeat(24,1fr);gap:3px}.heat i{display:block;aspect-ratio:1;min-height:14px;border-radius:4px}.hl2,.hl3{font-size:.72rem;color:var(--mu);align-self:center}
 .actb{display:inline-block;padding:3px 12px;border:1px solid currentColor;border-radius:8px;font-size:.78rem;font-weight:600}.actb.t{color:#4c8dff}.actb.m{color:var(--ok)}.actb.c{color:var(--bad)}
 td.in{color:var(--ok)}td.out{color:var(--bad)}
+/* Polish and live updates */
+.tcard,.ic,.card,.adbox{box-shadow:0 1px 2px rgba(20,10,60,.05),0 8px 24px -14px rgba(20,10,60,.3)}
+@media(min-width:760px){header{position:sticky;top:0;z-index:10;box-shadow:0 6px 20px -10px rgba(0,0,0,.45)}}
+th{font-size:.76rem;text-transform:uppercase;letter-spacing:.05em}
+.tcard th{background:color-mix(in srgb,var(--ac) 6%,var(--pn))}
+.tcard td{padding-top:12px;padding-bottom:12px}
+.thead{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;font-weight:600}
+.thead .tools{display:inline-flex;gap:8px;align-items:center;font-weight:400}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:.74rem;font-weight:600;color:var(--ok);padding:2px 10px;border-radius:99px;background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.live::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.25}}
+tr.fresh td{animation:fresh 4s ease-out}
+@keyframes fresh{from{background:color-mix(in srgb,var(--ok) 24%,transparent)}}
+@media(prefers-reduced-motion:reduce){.live::before,tr.fresh td{animation:none}}
+.sv{display:block;font-size:.8rem;margin-top:2px}
+.ok-i{color:var(--ok)}
 </style>
 </head>
 <body>
@@ -204,7 +220,8 @@ const short=h=>h.length>14?h.slice(0,6)+'…'+h.slice(-4):h;
 const units=(r,d)=>Number(r||0)/10**Number(d||0);
 const hex=h=>Number(BigInt(h&&h!=='0x'?h:'0x0'));
 const when=t=>t?new Date(t).toLocaleString(undefined,{timeZoneName:'short'}):'Pending';
-const ago=t=>{if(!t)return'Pending';const s=Math.max(0,(Date.now()-t)/1e3|0);return s<60?s+' sec ago':s<3600?(s/60|0)+' min ago':s<86400?(s/3600|0)+' hr ago':(s/86400|0)+' days ago'};
+const agoT=t=>{if(!t)return'Pending';const s=Math.max(0,(Date.now()-t)/1e3|0);return s<60?s+' sec ago':s<3600?(s/60|0)+' min ago':s<86400?(s/3600|0)+' hr ago':(s/86400|0)+' days ago'};
+const ago=t=>t?`<time data-ts="${t}">${agoT(t)}</time>`:'Pending'; // ticks live, see tick()
 const A=(net,a,full)=>a?`<a class="mono" href="#/address/${net}/${esc(a)}" title="${esc(a)}">${esc(full?a:short(a))}</a>`:'—';
 const T=(net,h)=>`<a class="mono" href="#/tx/${net}/${esc(h)}" title="${esc(h)}">${esc(short(h))}</a>`;
 const tbl=(head,rows)=>`<div class="wrap"><table><tr>${head.map(h=>`<th${h[0]==='>'?' class="n"':''}>${h.replace('>','')}</th>`).join('')}</tr>${rows.join('')}</table></div>`;
@@ -333,7 +350,7 @@ async function evmTabs(n,id,addr){
  const me=addr.toLowerCase(),px=PX[n.cg]||{},ch=px.usd_24h_change;
  const who=a=>{if(!a)return'—';const h=a.hash,l=a.ens_domain_name||a.name;return h.toLowerCase()===me?`<span class="me mono">${esc(short(h))}</span>`:`<a${l?'':' class="mono"'} href="#/address/${id}/${esc(h)}" title="${esc(h)}">${esc(l?(l.length>22?l.slice(0,21)+'…':l):short(h))}</a>`};
  const dir=(f,t)=>{const a=((f&&f.hash)||'').toLowerCase()===me,b=((t&&t.hash)||'').toLowerCase()===me;return a&&b?'<span class="dir self">SELF</span>':a?'<span class="dir o">OUT</span>':'<span class="dir i">IN</span>'};
- const card2=(title,head,rows,none,foot='')=>`<div class="tcard"><div class="thead">${title}</div>${rows.length?tbl(head,rows):`<p class="note" style="padding:0 16px 14px">${none}</p>`}${foot}</div>`;
+ const card2=(title,head,rows,none,foot='')=>`<div class="tcard"><div class="thead"><span>${title}</span><span class="live" title="Updates automatically">Live</span></div>${rows.length?tbl(head,rows):`<p class="note" style="padding:0 16px 14px">${none}</p>`}${foot}</div>`;
  const txr=((tx&&tx.items)||[]).slice(0,25).map(t=>`<tr><td>${T(id,t.hash)}</td><td><span class="meth${t.status==='error'?' bad':''}">${esc((m=>m?m[0].toUpperCase()+m.slice(1):'Transfer')(t.method||(t.raw_input&&t.raw_input.length>=10?t.raw_input.slice(0,10):'')))}</span></td><td>${esc(t.block_number??t.block??'—')}</td><td>${ago(Date.parse(t.timestamp))}</td><td>${who(t.from)}</td><td>${dir(t.from,t.to)}</td><td>${t.to?who(t.to):'Contract creation'}</td><td class="n">${num(units(t.value,18))} ${n.sym}</td><td class="n">${num(units(t.fee&&t.fee.value,18))}</td></tr>`);
  const tkr=((tk&&tk.items)||[]).slice(0,25).map(x=>`<tr><td>${T(id,x.transaction_hash||x.tx_hash||'')}</td><td>${ago(Date.parse(x.timestamp))}</td><td>${who(x.from)}</td><td>${dir(x.from,x.to)}</td><td>${who(x.to)}</td><td class="n">${num(units(x.total&&x.total.value,(x.total&&x.total.decimals)||(x.token&&x.token.decimals)))}</td><td>${esc((x.token&&(x.token.symbol||x.token.name))||'?')}</td></tr>`);
  NFT=(nf&&nf.items)||[];const itr=((it&&it.items)||[]).slice(0,25).map(x=>`<tr><td>${T(id,x.transaction_hash||'')}</td><td><span class="meth">${esc(x.type||'call')}</span></td><td>${esc(x.block_number??'—')}</td><td>${ago(Date.parse(x.timestamp))}</td><td>${who(x.from)}</td><td>${dir(x.from,x.to)}</td><td>${x.to?who(x.to):'—'}</td><td class="n">${num(units(x.value,18))} ${n.sym}</td></tr>`);
@@ -377,7 +394,7 @@ function drawTok(){
  $('tk-pg').innerHTML=`<span>Show rows: <select id="rw">${[10,25,50].map(x=>`<option${x===TS.rows?' selected':''}>${x}</option>`).join('')}</select></span><span class="pg"><button data-pg="first">First</button><button data-pg="prev">‹</button><span>Page ${TS.page} of ${pages}</span><button data-pg="next">›</button><button data-pg="last">Last</button></span>`;
 }
 const ex=(v,d)=>v.toFixed(d).replace(/(\.\d*?)0+$/,'$1').replace(/\.$/,'');
-const card3=(title,head,rows,none,foot='')=>`<div class="tcard"><div class="thead">${title}</div>${rows.length?tbl(head,rows):`<p class="note" style="padding:0 16px 14px">${none}</p>`}${foot}</div>`;
+const card3=(title,head,rows,none,foot='')=>`<div class="tcard"><div class="thead"><span>${title}</span><span class="live" title="Updates automatically">Live</span></div>${rows.length?tbl(head,rows):`<p class="note" style="padding:0 16px 14px">${none}</p>`}${foot}</div>`;
 async function addrAny(n,id,addr){
  TS={q:'',page:1,rows:10,sub:'m'};NFT=[];
  await addrPage(n,id,addr);
@@ -401,15 +418,19 @@ async function addrAny(n,id,addr){
  }else if(ty==='sol'){
   const sg=r.raw||[],full=sg.length<100;
   const dt=await solDetail(addr,sg.slice(0,25)).catch(()=>({}));
-  head=['','Signature','Age','Action','Counterparty','','>Amount (SOL)','>Value','Tokens','>Fee (SOL)','Program'];
-  rows=sg.slice(0,25).map(x=>{const d=dt[x.signature]||{},dr=d.net>1e-9?'in':d.net<-1e-9?'out':'',cp=d.from===addr?d.to:d.from;return`<tr><td><a class="eye" href="#/tx/${id}/${esc(x.signature)}" title="Open transaction">${IC.eye}</a></td><td style="white-space:nowrap">${x.err?'<span class="bad" title="Failed">!</span> ':''}${T(id,x.signature)}${cpb(x.signature)}</td><td>${ago(x.blockTime?x.blockTime*1000:null)}</td><td>${d.ins?`<span class="pillx">${esc(d.ins[0]||'—')}</span>${d.ins.length>1?`<span class="pillx m">${d.ins.length-1}+</span>`:''}`:'—'}</td><td>${cp?A(id,cp):'—'}</td><td>${dirb(dr)}</td><td class="n ${dr}">${d.net==null?'—':(dr==='out'?'−':dr==='in'?'+':'')+fs(Math.abs(d.net))}</td><td class="n">${d.net==null||!px?'—':usd(Math.abs(d.net*px))}</td><td>${(d.tk||[]).slice(0,2).map(([m,v])=>`<span class="${v<0?'out':'in'}">${v<0?'−':'+'}${num(Math.abs(v))} ${esc(tkSym(m))}</span>`).join('<br>')||'—'}</td><td class="n">${d.fee==null?'—':fs(d.fee)}</td><td style="white-space:nowrap">${(d.prg||[]).slice(0,3).map(q=>`<span class="prg" title="${esc(PRG[q]||q)}" style="background:hsl(${hue(q)} 55% 42%)">${esc((PRG[q]||q).slice(0,2).toUpperCase())}</span>`).join('')}</td></tr>`});
+  head=['','Signature','Block','Time','Instructions','By','>Value','>Fee (SOL)','Programs'];
+  rows=sg.slice(0,25).map(x=>{const d=dt[x.signature]||{},dr=d.net>1e-9?'in':d.net<-1e-9?'out':'',sg2=dr==='out'?'−':dr==='in'?'+':'';
+   const ins=d.ins?`<span class="pillx">${esc(d.ins[0]||'—')}</span>${d.ins.length>1?`<span class="pillx m">+${d.ins.length-1}</span>`:''}`:'—';
+   const val=d.net==null?'—':`<span class="${dr}">${sg2}${fs(Math.abs(d.net))} SOL</span>${px&&dr?`<span class="sv mu">${usd(Math.abs(d.net*px))}</span>`:''}`+(d.tk||[]).slice(0,2).map(([m,v])=>`<span class="sv ${v<0?'out':'in'}">${v<0?'−':'+'}${num(Math.abs(v))} ${esc(tkSym(m))}</span>`).join('');
+   const prg=(d.prg||[]).slice(0,3).map(q=>`<span class="prg" title="${esc(PRG[q]||q)}" style="background:hsl(${hue(q)} 55% 42%)">${esc((PRG[q]||q).slice(0,2).toUpperCase())}</span>`).join('')+((d.prg||[]).length>3?`<span class="pillx m" style="margin-left:8px">+${d.prg.length-3}</span>`:'');
+   return`<tr><td><a class="eye" href="#/tx/${id}/${esc(x.signature)}" title="Open transaction">${IC.eye}</a></td><td style="white-space:nowrap">${x.err?'<span class="bad" title="Failed">!</span> ':'<span class="ok-i" title="Success">✓</span> '}${T(id,x.signature)}${cpb(x.signature)}</td><td>${x.slot!=null?esc(Number(x.slot).toLocaleString()):'—'}</td><td>${ago(x.blockTime?x.blockTime*1000:null)}</td><td>${ins}</td><td>${d.by?(d.by===addr?'<span class="me mono">'+esc(short(addr))+'</span>':A(id,d.by))+cpb(d.by):'—'}</td><td class="n">${val}</td><td class="n">${d.fee==null?'—':fs(d.fee)}</td><td style="white-space:nowrap">${prg||'—'}</td></tr>`});
   const tr=[],act=d=>{const t=(d.ins||[]).join(' ');return/closeAccount/i.test(t)?['CLOSE ACCOUNT','c']:/mintTo/i.test(t)?['MINT','m']:['TRANSFER','t']};
   sg.slice(0,25).forEach(x=>{const d=dt[x.signature];if(!d)return;const cpx=d.from===addr?d.to:d.from,a=act(d),base=`<td>${T(id,x.signature)}</td><td>${ago(x.blockTime?x.blockTime*1000:null)}</td><td><span class="actb ${a[1]}">${a[0]}</span></td>`;
    const add=(v,sy,uv)=>{const out=v<0,me=A(id,addr),o=cpx?A(id,cpx):'—';tr.push(`<tr>${base}<td>${out?me:o}</td><td>${out?o:me}</td><td class="n ${out?'out':'in'}">${out?'−':'+'}${num(Math.abs(v))}</td><td class="n">${uv}</td><td>${esc(sy)}</td></tr>`)};
    if(Math.abs(d.net)>1e-9)add(d.net,'SOL',px?usd(Math.abs(d.net*px)):'—');
    (d.tk||[]).forEach(([m,v])=>add(v,tkSym(m),'N/A'))});
   trh=card3(`Latest ${tr.length} transfers`,['Signature','Age','Action','From','To','>Amount','>Value','Token'],tr,'No transfers found.');
-  title=`Latest ${rows.length} from a total of ${full?sg.length:'100+'} transactions`+(()=>{const v=Object.values(dt).filter(Boolean),i=v.reduce((q,d)=>q+Math.max(0,d.net),0),o=v.reduce((q,d)=>q+Math.max(0,-d.net),0);return v.length?` <span class="mu">· received</span> <span class="in">+${fs(i)} SOL</span> <span class="mu">· sent</span> <span class="out">−${fs(o)} SOL</span>`:''})();
+  title=`<button class="cp" data-tt style="float:right;margin-left:10px">Time: ago or date</button>Latest ${rows.length} from a total of ${full?sg.length:'100+'} transactions`+(()=>{const v=Object.values(dt).filter(Boolean),i=v.reduce((q,d)=>q+Math.max(0,d.net),0),o=v.reduce((q,d)=>q+Math.max(0,-d.net),0);return v.length?` <span class="mu">· received</span> <span class="in">+${fs(i)} SOL</span> <span class="mu">· sent</span> <span class="out">−${fs(o)} SOL</span>`:''})();
   lat=lk(r.txs[0]);fst=full?lk(r.txs[r.txs.length-1]):'—';view='https://explorer.solana.com/address/'+addr;
  }else{
   const g=await rpc(n.rpc,'eth_gasPrice',[]).then(x=>hex(x)/1e9,()=>null);
@@ -702,7 +723,7 @@ async function solDetail(addr,sigs){
    for(const q of [...m.instructions,...((meta.innerInstructions||[]).flatMap(w=>w.instructions))]){const p=q.parsed;if(p&&p.type==='transfer'&&p.info&&p.info.lamports!=null&&(p.info.source===addr||p.info.destination===addr)){from=p.info.source;to=p.info.destination;break}}
    const tk={};
    [...(meta.preTokenBalances||[]).map(b=>[b,-1]),...(meta.postTokenBalances||[]).map(b=>[b,1])].forEach(([b,sg])=>{if(b.owner===addr)tk[b.mint]=(tk[b.mint]||0)+sg*(Number(b.uiTokenAmount.uiAmountString)||0)});
-   SD[addr+g.signature]={net,fee,from,to,tk:Object.entries(tk).filter(([,v])=>Math.abs(v)>1e-12),ins:m.instructions.map(q=>(q.parsed&&q.parsed.type)||PRG[q.programId]||short(q.programId)),prg:[...new Set(m.instructions.map(q=>q.programId))]}
+   SD[addr+g.signature]={net,fee,from,to,by:(ks.find(k=>k.signer)||{}).pubkey||null,tk:Object.entries(tk).filter(([,v])=>Math.abs(v)>1e-12),ins:m.instructions.map(q=>(q.parsed&&q.parsed.type)||PRG[q.programId]||short(q.programId)),prg:[...new Set(m.instructions.map(q=>q.programId))]}
   })
  }
  return sigs.reduce((o,g)=>(o[g.signature]=SD[addr+g.signature],o),{})
@@ -716,8 +737,8 @@ async function addrEvm(n,id,addr){
 const TX={
  async evm(n,id,h){
   const t=await bget(n,'/transactions/'+h);if(!t)throw new Error('Transaction not found on '+n.name+'.');
-  const tt=await bget(n,`/transactions/${h}/token-transfers`),ts=Date.parse(t.timestamp),ok=t.status==='ok',tr=(tt&&tt.items)||[];
-  return{kv:[['Transaction hash',`<span class="mono">${esc(h)}</span>`],['Status',badge(ok,ok?'Success':'Failed')],['Block',esc(t.block_number??t.block??'—')],['Timestamp',esc(when(ts))+' ('+ago(ts)+')'],['From',A(id,t.from&&t.from.hash,1)],['To',t.to?A(id,t.to.hash,1):'Contract created: '+A(id,t.created_contract&&t.created_contract.hash,1)],['Value',fmt(units(t.value,18),n)],['Transaction fee',fmt(units(t.fee&&t.fee.value,18),n)],['Method',esc(t.method||'—')],['Confirmations',esc(t.confirmations??'—')]],
+  const tt=await bget(n,`/transactions/${h}/token-transfers`),ts=Date.parse(t.timestamp)||null,ok=t.status==='ok',pend=t.status==null||t.result==='pending',tr=(tt&&tt.items)||[];
+  return{kv:[['Transaction hash',`<span class="mono">${esc(h)}</span>`],['Status',pend?badge(false,'Pending'):badge(ok,ok?'Success':'Failed')],['Block',esc(t.block_number??t.block??'—')],['Timestamp',esc(when(ts))+' ('+ago(ts)+')'],['From',A(id,t.from&&t.from.hash,1)],['To',t.to?A(id,t.to.hash,1):'Contract created: '+A(id,t.created_contract&&t.created_contract.hash,1)],['Value',fmt(units(t.value,18),n)],['Transaction fee',fmt(units(t.fee&&t.fee.value,18),n)],['Method',esc(t.method||'—')],['Confirmations',esc(t.confirmations??'—')]],
   extra:tr.length?'<h2>Token transfers</h2>'+tbl(['From','To','>Amount'],tr.map(x=>`<tr><td>${A(id,x.from&&x.from.hash)}</td><td>${A(id,x.to&&x.to.hash)}</td><td class="n">${num(units(x.total&&x.total.value,x.total&&x.total.decimals))} ${esc(x.token&&x.token.symbol)}</td></tr>`)):''}
  },
  async esplora(n,id,h){
@@ -820,7 +841,7 @@ $('f').onsubmit=e=>{e.preventDefault();const q=$('q').value.trim(),d=detect(q,$(
  location.hash=`#/${d[1]}/${d[0]}/${q}`};
 $('chain').onchange=()=>{if(!/^#\/(address|tx)\//.test(location.hash))home()};
 $('app').onclick=e=>{const b=e.target.closest('[data-n],[data-t],[data-c],[data-tag],[data-csv],[data-pg],[data-s],[data-mc],[data-an],[data-d],[data-m],[data-tp],[data-tn],[data-tt],[data-tr],[data-sa],[data-sr]');if(!b)return;const d=b.dataset;
- if(d.sa){SA.sub=d.sa;solAnLoad()}else if(d.sr){SA.range=+d.sr;solAnLoad()}else if(d.tp){TP.page=d.tp==='first'?1:d.tp==='prev'?TP.page-1:d.tp==='next'?TP.page+1:1e9;txpDraw()}else if(d.tn){TP.id=d.tn;TP.page=1;history.replaceState(null,'','#/txs/'+d.tn);txpLoad()}else if(d.tt!==undefined){TP.abs=!TP.abs;txpDraw()}else if(d.tr!==undefined){txpLoad()}else if(d.m){AN.metric=d.m;document.querySelectorAll('[data-m]').forEach(x=>x.classList.toggle('on',x===b));anDraw()}else if(d.an){AN.coin=d.an;if(/^#\/analytics/.test(location.hash))history.replaceState(null,'','#/analytics/'+d.an);anLoad()}else if(d.d){AN.days=+d.d;anLoad()}else if(d.pg){TS.page=d.pg==='first'?1:d.pg==='prev'?TS.page-1:d.pg==='next'?TS.page+1:1e9;drawTok()}else if(d.s){TS.sub=d.s;document.querySelectorAll('[data-s]').forEach(x=>x.classList.toggle('on',x===b));$('as-sum').hidden=d.s!=='m';$('as-tok').hidden=d.s==='f';$('as-nft').hidden=d.s!=='f'}else if(d.mc!==undefined){$('as-chains').classList.toggle('all')}else if(d.csv!==undefined){const rows=[...document.querySelectorAll('#p-t tr')].map(x=>[...x.cells].map(c=>{const a=c.querySelector('[title]');return'"'+((a?a.title:c.textContent.trim())||'').replace(/"/g,'""')+'"'}).join(',')).join('\n'),l=document.createElement('a');l.href=URL.createObjectURL(new Blob([rows],{type:'text/csv'}));l.download='transactions.csv';l.click()}else if(d.tag){const v=prompt('Name tag for this address (saved only in this browser):',b.textContent==='+ Add'?'':b.textContent);if(v!==null){const t=v.trim();try{t?localStorage.setItem('tag:'+d.tag,t):localStorage.removeItem('tag:'+d.tag)}catch(e){}b.textContent=t||'+ Add'}}else if(d.n)blocks(d.n)
+ if(d.sa){SA.sub=d.sa;solAnLoad()}else if(d.sr){SA.range=+d.sr;solAnLoad()}else if(d.tp){TP.page=d.tp==='first'?1:d.tp==='prev'?TP.page-1:d.tp==='next'?TP.page+1:1e9;txpDraw()}else if(d.tn){TP.id=d.tn;TP.page=1;history.replaceState(null,'','#/txs/'+d.tn);txpLoad()}else if(d.tt!==undefined){TP.abs=!TP.abs;txpDraw();tick()}else if(d.tr!==undefined){txpLoad()}else if(d.m){AN.metric=d.m;document.querySelectorAll('[data-m]').forEach(x=>x.classList.toggle('on',x===b));anDraw()}else if(d.an){AN.coin=d.an;if(/^#\/analytics/.test(location.hash))history.replaceState(null,'','#/analytics/'+d.an);anLoad()}else if(d.d){AN.days=+d.d;anLoad()}else if(d.pg){TS.page=d.pg==='first'?1:d.pg==='prev'?TS.page-1:d.pg==='next'?TS.page+1:1e9;drawTok()}else if(d.s){TS.sub=d.s;document.querySelectorAll('[data-s]').forEach(x=>x.classList.toggle('on',x===b));$('as-sum').hidden=d.s!=='m';$('as-tok').hidden=d.s==='f';$('as-nft').hidden=d.s!=='f'}else if(d.mc!==undefined){$('as-chains').classList.toggle('all')}else if(d.csv!==undefined){const rows=[...document.querySelectorAll('#p-t tr')].map(x=>[...x.cells].map(c=>{const a=c.querySelector('[title]');return'"'+((a?a.title:c.textContent.trim())||'').replace(/"/g,'""')+'"'}).join(',')).join('\n'),l=document.createElement('a');l.href=URL.createObjectURL(new Blob([rows],{type:'text/csv'}));l.download='transactions.csv';l.click()}else if(d.tag){const v=prompt('Name tag for this address (saved only in this browser):',b.textContent==='+ Add'?'':b.textContent);if(v!==null){const t=v.trim();try{t?localStorage.setItem('tag:'+d.tag,t):localStorage.removeItem('tag:'+d.tag)}catch(e){}b.textContent=t||'+ Add'}}else if(d.n)blocks(d.n)
  else if(d.t){document.querySelectorAll('[data-t]').forEach(x=>x.classList.toggle('on',x===b));['t','k','o','r','n','a'].forEach(q=>{const e=$('p-'+q);if(e)e.hidden=q!==d.t});if(d.t==='n')solAnLoad()}
  else if(navigator.clipboard)navigator.clipboard.writeText(d.c).then(()=>b.classList.contains('ic')?b.classList.add('ok'):b.textContent='Copied')};
 $('app').onmousemove=e=>{const s=e.target.closest('#an-svg');if(!s||!AN.g)return;const q=s.getBoundingClientRect(),g=AN.g,t=g.x0+((e.clientX-q.left)/q.width*g.W-g.L)/(g.W-g.L-g.R)*(g.x1-g.x0);let i=0,bd=1e18;g.xs.forEach((x,k)=>{const dd=Math.abs(x-t);if(dd<bd){bd=dd;i=k}});const px=g.X(g.xs[i]),py=g.Y(g.ys[i]),v=$('an-svg-v'),c=$('an-svg-c'),tp=$('an-tip');v.setAttribute('x1',px);v.setAttribute('x2',px);v.setAttribute('opacity',.5);c.setAttribute('cx',px);c.setAttribute('cy',py);c.setAttribute('opacity',1);tp.style.display='block';tp.style.left=Math.min(Math.max(px/g.W*q.width-80,4),q.width-190)+'px';tp.textContent=new Date(g.xs[i]).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'})+'  ·  '+g.fmt(g.ys[i])};
@@ -840,9 +861,36 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&$('bl'))b
 // Refresh prices every 30 minutes (and when you return to a stale tab), then redraw the page with the new values.
 const refresh=async()=>{PXT=0;await prices();if(document.activeElement!==$('q'))route()};
 setInterval(refresh,PX_MS);
-setInterval(()=>{if(!document.hidden&&$('tp-body')&&TP.page===1)txpLoad(1)},3e4); // transactions page refreshes quietly while you are on page 1
+setInterval(()=>{if(!document.hidden&&$('tp-body')&&TP.page===1)txpLoad(1)},15e3); // transactions page refreshes quietly while you are on page 1
 setInterval(()=>{if(!document.hidden&&$('an-chart')&&(!$('p-n')||!$('p-n').hidden))anLoad(1)},6e4); // live chart refresh every minute
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-PXT>PX_MS)refresh()});
+// Times tick every second. Inside transaction tables they follow the "ago or date" toggle.
+function tick(){document.querySelectorAll('time[data-ts]').forEach(e=>{const t=+e.dataset.ts,s=TP.abs&&e.closest('.tcard')?when(t):agoT(t);if(e.textContent!==s)e.textContent=s})}
+setInterval(()=>{if(!document.hidden)tick()},1e3);
+// Address and transaction pages refresh quietly every 15 seconds, so new and pending transactions show up without a reload.
+let LV=0;
+async function live(){
+ const h=location.hash,[,k,id,q]=h.split('/'),n=NETS[id];
+ if(document.hidden||LV||!n||!q||(k!=='tx'&&k!=='address')||document.activeElement===$('q'))return;
+ const v=decodeURIComponent(q);LV=1;
+ try{
+  if(k==='tx'){const html=await txPage(n,id,v);if(html&&location.hash===h)$('app').innerHTML=html;return}
+  const sa={...SA},ts=TS,old=new Set([...document.querySelectorAll('#app section a[href^="#/tx/"]')].map(a=>a.getAttribute('href')));
+  const html=await(n.type==='evm'?addrEvm:addrAny)(n,id,v);
+  Object.assign(SA,sa);TS=ts; // keep the analytics and token table state the page builder resets
+  if(!html||location.hash!==h)return;
+  const tp=document.createElement('template');tp.innerHTML=html;
+  for(const s of ['p-t','p-r','p-k','p-o']){
+   const a=$(s),b=tp.content.getElementById(s);if(!a||!b)continue;
+   a.innerHTML=b.innerHTML;
+   a.querySelectorAll('tr').forEach(r=>{const l=r.querySelector('a[href^="#/tx/"]');if(l&&old.size&&!old.has(l.getAttribute('href')))r.classList.add('fresh')})
+  }
+  const o=document.querySelector('#app .three .ic'),p=tp.content.querySelector('.three .ic');if(o&&p&&!o.querySelector('details[open]'))o.innerHTML=p.innerHTML;
+  tick()
+ }catch(e){}finally{LV=0}
+}
+setInterval(live,15e3);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)live()});
 addEventListener('hashchange',route);
 route();
 </script>
