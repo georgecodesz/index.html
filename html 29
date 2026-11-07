@@ -1,0 +1,850 @@
+m<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CryptoScan – multi-chain block explorer</title>
+<style>
+:root{color-scheme:light dark;--bg:#f6f2ff;--pn:#fff;--ink:#1a1140;--mu:#6b5f99;--ln:#e1d9fb;--ac:#6a2cf5;--ac2:#ff2e88;--ok:#00805f;--bad:#d6204f;--hd:linear-gradient(100deg,#2b0f8f,#7a2be0 55%,#ff2e88)}
+@media(prefers-color-scheme:dark){:root{--bg:#0e0820;--pn:#1a1236;--ink:#f5f1ff;--mu:#a99fd8;--ln:#2f2466;--ac:#9d7bff;--ac2:#ff5fae;--ok:#2bf0b4;--bad:#ff6b8a;--hd:linear-gradient(100deg,#1d0a63,#5a1fb3 55%,#d11f78)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--ac);text-decoration:none}a:hover{text-decoration:underline}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88em;word-break:break-all}
+header{background:var(--hd);padding:14px 20px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;border-bottom:1px solid var(--ln)}
+.logo{font-size:1.35rem;font-weight:800;color:#fff;letter-spacing:-.02em}.logo b{color:#6ea1ff}.logo:hover{text-decoration:none}
+#f{display:flex;flex:1 1 380px;max-width:780px}
+#f select,#f input,#f button{font:inherit;border:1px solid var(--ln);padding:10px 12px;background:var(--pn);color:var(--ink)}
+#f select{border-radius:8px 0 0 8px;border-right:0}
+#f input{flex:1;min-width:0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88rem;border-radius:0}
+#f button{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600;border-radius:0 8px 8px 0;cursor:pointer}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+main{max-width:1100px;margin:0 auto;padding:28px 20px 40px}
+h1{font-size:1.5rem;margin:0 0 6px;letter-spacing:-.01em}h2{font-size:1.1rem;margin:30px 0 10px}
+.hero{padding:18px 0 4px}.hero h1{font-size:clamp(1.7rem,5vw,2.6rem);max-width:22ch;line-height:1.15}
+.sub,.note{color:var(--mu)}.note{font-size:.88rem}.err{color:var(--bad)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:16px}
+.card{background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:14px 16px;text-align:left;color:inherit;font:inherit;display:flex;flex-direction:column;gap:2px}
+button.card{cursor:pointer}button.card.on,button.card:hover{border-color:var(--ac)}
+.card span{color:var(--mu);font-size:.85rem}.card b{font-size:1.2rem;font-variant-numeric:tabular-nums}
+.card .up{color:var(--ok)}.card .dn{color:var(--bad)}
+.wrap{overflow-x:auto;background:var(--pn);border:1px solid var(--ln);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{padding:10px 14px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--ln)}
+tr:last-child td{border-bottom:0}th{color:var(--mu);font-weight:500}.n{text-align:right;font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:6px;margin:26px 0 10px}
+.tabs button{font:inherit;background:none;border:1px solid var(--ln);color:var(--mu);border-radius:8px;padding:7px 14px;cursor:pointer}
+.tabs button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.kv{display:grid;grid-template-columns:170px 1fr;gap:6px 16px;padding:12px 16px;border-bottom:1px solid var(--ln)}
+.kv:last-child{border:0}.kv>span{color:var(--mu)}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.82rem;font-weight:600;border:1px solid currentColor}
+.in{color:var(--ok)}.out{color:var(--bad)}
+.cp{font:inherit;font-size:.8rem;background:none;border:1px solid var(--ln);color:var(--mu);border-radius:6px;padding:2px 8px;cursor:pointer;margin-left:8px}
+details{margin-top:20px;color:var(--mu);font-size:.88rem}
+details input{display:block;margin:8px 0;padding:8px 10px;width:100%;max-width:420px;font:inherit;background:var(--pn);color:var(--ink);border:1px solid var(--ln);border-radius:6px}
+footer{max-width:1100px;margin:0 auto;padding:0 20px 40px}
+@media(max-width:600px){.kv{grid-template-columns:1fr}}
+/* bolder look */
+body{background-image:radial-gradient(900px 380px at 88% -60px,color-mix(in srgb,var(--ac2) 18%,transparent),transparent)}
+.logo b{color:#ffe14d}
+#f button{background:#ffe14d;border-color:#ffe14d;color:#1a1140}
+h1{font-weight:800;letter-spacing:-.03em}
+.hero h1{font-size:clamp(2rem,6vw,3.2rem)}
+h2{display:flex;align-items:center;gap:10px}
+h2::before{content:"";width:6px;height:1.1em;border-radius:3px;background:linear-gradient(var(--ac2),var(--ac))}
+.card{border-radius:14px}
+button.card[data-n]{border-left:5px solid var(--nc,var(--ac));transition:transform .12s}
+button.card[data-n]:hover{transform:translateY(-2px)}
+button.card.on{background:color-mix(in srgb,var(--nc,var(--ac)) 14%,var(--pn));border-color:var(--nc,var(--ac))}
+[data-n=eth]{--nc:#627eea}[data-n=btc]{--nc:#f7931a}[data-n=ltc]{--nc:#5b7fc7}[data-n=sol]{--nc:#9945ff}[data-n=bsc]{--nc:#f3ba2f}[data-n=poly]{--nc:#8247e5}[data-n=hype]{--nc:#50d2c1}
+.wrap{border-radius:14px;box-shadow:0 8px 28px -14px color-mix(in srgb,var(--ac) 50%,transparent)}
+th{color:var(--ac);font-weight:600}
+tr:hover td{background:color-mix(in srgb,var(--ac) 8%,transparent)}
+.cp:hover{color:var(--ac);border-color:var(--ac)}
+footer{max-width:none;margin:40px 0 0;padding:32px 20px 28px;background:var(--pn);border-top:1px solid var(--ln)}
+.fin{max-width:1100px;margin:0 auto}
+.fcols{display:grid;grid-template-columns:minmax(220px,1.3fr) 3fr;gap:28px}
+.flogo{font-size:1.25rem;font-weight:800;letter-spacing:-.02em;color:var(--ink)}.flogo b{color:var(--ac2)}.flogo:hover{text-decoration:none}
+.fcols p{margin:8px 0 0;max-width:34ch}
+.flinks{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:20px}
+.flinks h3{font-size:.95rem;margin:0 0 8px}
+.flinks a{display:block;padding:3px 0;color:var(--mu)}.flinks a:hover{color:var(--ac)}
+.fbar{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;margin-top:24px;padding-top:16px;border-top:1px solid var(--ln);color:var(--mu);font-size:.88rem}
+@media(max-width:700px){.fcols{grid-template-columns:1fr}}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.pill{font:inherit;padding:6px 16px;border-radius:99px;border:1px solid var(--ln);background:var(--pn);color:var(--ink);cursor:pointer}
+.pill:hover{border-color:var(--nc,var(--ac))}
+.pill.on{background:color-mix(in srgb,var(--nc,var(--ac)) 24%,var(--pn));border-color:var(--nc,var(--ac));font-weight:600}
+h3{font-size:1rem;margin:22px 0 8px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:0 20px;align-items:start}
+.two>div{min-width:0}
+.two table{font-size:.84rem}.two th,.two td{padding:9px 10px}
+:root{--amb:#b87400}@media(prefers-color-scheme:dark){:root{--amb:#ffc857}}
+.tabs{flex-wrap:wrap}
+.strip{margin:0 0 14px;color:var(--mu);font-size:.9rem}.strip b{color:var(--ac)}
+.tcard{background:var(--pn);border:1px solid var(--ln);border-radius:14px;overflow:hidden}
+.thead{padding:14px 16px;font-weight:500}
+.tcard .wrap{border:0;border-top:1px solid var(--ln);border-radius:0;box-shadow:none}
+.dir{display:inline-block;min-width:46px;text-align:center;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700;border:1px solid var(--ln)}
+.dir.o{color:var(--amb);background:color-mix(in srgb,var(--amb) 14%,transparent);border-color:color-mix(in srgb,var(--amb) 40%,transparent)}
+.dir.i{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent);border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
+.dir.self{color:var(--mu)}
+.meth{display:inline-block;padding:3px 12px;border:1px solid var(--ln);border-radius:8px;background:color-mix(in srgb,var(--ink) 5%,transparent);font-size:.82rem}
+.meth.bad{color:var(--bad);border-color:var(--bad)}
+.me{padding:2px 8px;border:1px dashed var(--amb);border-radius:8px;background:color-mix(in srgb,var(--amb) 12%,transparent)}
+.ahead{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:4px 0 18px}
+.ahead h1{margin:0}.ahead .mono{font-size:1rem;font-weight:500}.av{width:34px;height:34px;border-radius:50%;flex:none}
+.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;align-items:start}
+.ic{background:var(--pn);border:1px solid var(--ln);border-radius:14px;padding:18px 20px;min-width:0}
+.ic h3{margin:0 0 14px;font-size:1.05rem}
+.ic .l{color:var(--mu);font-size:.78rem;letter-spacing:.04em;margin-top:16px}.ic h3+.l{margin-top:0}
+.ic .v{margin-top:3px;word-break:break-all}.ic .v span,.mc span{color:var(--mu);font-size:.9rem;font-weight:400}
+.dd{margin-top:6px;color:var(--ink);font-size:.95rem;border:1px solid var(--ln);border-radius:10px;padding:8px 12px}.dd summary{cursor:pointer}.dd .wrap{margin:10px 0}
+.tag{font:inherit;border:1px dashed var(--mu);background:none;border-radius:99px;padding:4px 14px;color:var(--ink);cursor:pointer}
+.mc{display:inline-block;font-weight:600;padding:6px 12px;border-radius:10px;background:color-mix(in srgb,var(--ac) 10%,transparent)}
+.mcl{display:grid;grid-template-columns:1fr auto;gap:6px 12px;margin-top:12px}
+.adbox{position:relative;margin-top:18px;min-height:110px;display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;border:1px dashed var(--ln);border-radius:12px}
+.adtag{position:absolute;top:-10px;right:12px;padding:0 8px;background:var(--pn);border:1px solid var(--ln);border-radius:6px;font-size:.78rem;color:var(--mu)}
+.adbox a{display:flex;flex-direction:column;gap:4px;color:var(--ink)}.adbox a span{color:var(--mu);font-size:.85rem}.adbox img{display:block;max-width:100%;border-radius:8px}
+#tl .wrap{max-height:560px;overflow:auto}#tl th{position:sticky;top:0;background:var(--pn)}
+.viewall{display:block;text-align:center;padding:14px;border-top:1px solid var(--ln);background:color-mix(in srgb,var(--ink) 4%,transparent);color:var(--mu);font-weight:600;font-size:.82rem;letter-spacing:.06em}
+.sponsor{margin:0 0 16px;color:var(--mu)}.sponsor b{color:var(--ink)}.csv{text-align:right;margin:10px 0 4px}
+.hl{--ac:#16967c}
+.mu{color:var(--mu)}
+.asrow{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.seg{display:inline-flex;gap:2px;padding:4px;background:color-mix(in srgb,var(--ink) 6%,transparent);border-radius:10px}
+.seg button{font:inherit;border:0;background:none;padding:7px 16px;border-radius:8px;cursor:pointer;color:var(--ink)}
+.seg button.on{background:var(--pn);box-shadow:0 1px 3px rgba(0,0,0,.18);font-weight:600}
+.achip{display:flex;align-items:center;gap:8px;min-width:0}.av.sm{width:22px;height:22px}
+.nw{display:flex;flex-wrap:wrap;gap:28px;align-items:center;margin-top:16px;padding:18px 22px;border:1px solid var(--ln);border-radius:14px;background:var(--pn)}
+.nw .l{color:var(--mu);font-size:.78rem;letter-spacing:.04em}.nw .big{font-size:1.5rem;font-weight:500}
+.bw{flex:1 1 280px;min-width:0}.bar{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--ln)}.bar i{display:block;height:100%}
+.leg{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px;font-size:.88rem}.leg u{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.chips{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:12px 0}
+.chip{padding:10px 16px;border:1px solid var(--ln);border-radius:12px;background:color-mix(in srgb,var(--ink) 3%,transparent)}.chip span{color:var(--mu)}
+.chips .z{display:none}.chips.all .z{display:block}
+.lnk{font:inherit;background:none;border:0;color:var(--mu);text-decoration:underline;cursor:pointer;padding:0}
+.tk{margin-top:8px;border:1px solid var(--ln);border-radius:14px;overflow:hidden;background:var(--pn)}
+.tkh{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--ln)}
+.tkh input,.pgr select{font:inherit;padding:8px 12px;border:1px solid var(--ln);border-radius:8px;background:var(--pn);color:var(--ink)}
+.tk .wrap{border:0;border-radius:0;box-shadow:none}
+.pgr{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid var(--ln)}
+.pg{display:flex;gap:6px;align-items:center}.pg button{font:inherit;padding:6px 12px;border:1px solid var(--ln);border-radius:8px;background:var(--pn);color:var(--mu);cursor:pointer}
+#an-chart{position:relative}#an-svg{display:block;width:100%;height:auto}
+.antip{display:none;position:absolute;top:4px;padding:4px 8px;background:var(--pn);border:1px solid var(--ln);border-radius:8px;font-size:.8rem;white-space:nowrap;pointer-events:none}
+.seg{flex-wrap:wrap}.sub{max-width:75ch}
+.hbtn{margin-left:auto;padding:9px 18px;border-radius:10px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.16);color:#fff;font-weight:600}
+.hbtn:hover{background:rgba(255,255,255,.28);text-decoration:none}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:16px}
+.stat{background:var(--pn);border:1px solid var(--ln);border-radius:14px;padding:14px 16px}
+.stat:first-child{background:linear-gradient(135deg,color-mix(in srgb,var(--ac) 18%,var(--pn)),color-mix(in srgb,var(--ac2) 14%,var(--pn)))}
+.stat .l{color:var(--mu);font-size:.75rem;letter-spacing:.05em}.stat .big{font-size:1.4rem;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}.stat .s{margin-top:2px;font-size:.85rem}
+.chg{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.8rem;font-weight:600}
+.chg.up{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}.chg.dn{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+.kvg{background:var(--pn);border:1px solid var(--ln);border-radius:14px;padding:2px 16px}
+.kvi{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--ln)}.kvi:last-child{border:0}.kvi span{color:var(--mu)}.kvi b{font-weight:500;text-align:right}
+tr[data-an]{cursor:pointer}tr.sel td{background:color-mix(in srgb,var(--ac) 10%,transparent)}
+#an-nc{margin-top:4px}
+.ic{background:none;border:0;color:var(--mu);cursor:pointer;padding:2px 5px;vertical-align:middle}.ic:hover{color:var(--ac)}.ic.ok{color:var(--ok)}
+.eye{display:inline-flex;padding:6px;border:1px solid var(--ln);border-radius:8px;color:var(--mu)}.eye:hover{color:var(--ac);text-decoration:none}
+.pillx{display:inline-block;padding:2px 12px;margin-right:6px;border:1px solid var(--ln);border-radius:8px;background:color-mix(in srgb,var(--ink) 5%,transparent);font-size:.84rem}.pillx.m{padding:2px 8px;color:var(--mu)}
+.prg{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;margin-right:-4px;border-radius:50%;border:2px solid var(--pn);color:#fff;font-size:.6rem;font-weight:700}
+.bad{display:inline-block;width:16px;height:16px;border-radius:50%;background:var(--bad);color:#fff;text-align:center;line-height:16px;font-size:.7rem;font-weight:700}
+sub{font-size:.7em}.hbtn+.hbtn{margin-left:0}
+.stat4{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));background:var(--pn);border:1px solid var(--ln);border-radius:14px}
+.sc{padding:16px 20px;border-right:1px solid var(--ln)}.sc:last-child{border-right:0}.sc .l{color:var(--mu);font-size:.75rem;letter-spacing:.05em}.sc .big{font-size:1.5rem;font-weight:600;margin-top:2px}.sc .s{font-size:.85rem;margin-top:2px}
+.heat{display:grid;grid-template-columns:44px repeat(24,1fr);gap:3px}.heat i{display:block;aspect-ratio:1;min-height:14px;border-radius:4px}.hl2,.hl3{font-size:.72rem;color:var(--mu);align-self:center}
+.actb{display:inline-block;padding:3px 12px;border:1px solid currentColor;border-radius:8px;font-size:.78rem;font-weight:600}.actb.t{color:#4c8dff}.actb.m{color:var(--ok)}.actb.c{color:var(--bad)}
+td.in{color:var(--ok)}td.out{color:var(--bad)}
+</style>
+</head>
+<body>
+<header>
+<a class="logo" href="#/">Crypto<b>Scan</b></a>
+<form id="f"><select id="chain" aria-label="Network"></select><input id="q" aria-label="Search" placeholder="Search by address or transaction hash" autocomplete="off" spellcheck="false"><button>Search</button></form>
+<a class="hbtn" href="#/txs">Transactions</a>
+<a class="hbtn" href="#/analytics">Analytics</a>
+</header>
+<main id="app"></main>
+<footer><div class="fin">
+<div class="fcols"><div><a class="flogo" href="#/">Crypto<b>Scan</b></a><p class="note">A free, read-only explorer for the major blockchains. Search any address or transaction without connecting a wallet.</p></div><div class="flinks" id="cols"></div></div>
+<details><summary>Blockscout API key (optional)</summary>
+<input id="key" type="password" aria-label="Blockscout API key" placeholder="Blockscout API key" autocomplete="off">
+<p>Used for Ethereum and Polygon if the free endpoints rate-limit you. Get a key at <a href="https://docs.blockscout.com" target="_blank" rel="noopener">docs.blockscout.com</a>.</p></details>
+<details><summary>CoinGecko API key (optional)</summary>
+<input id="cgk" type="password" aria-label="CoinGecko API key" placeholder="CoinGecko API key" autocomplete="off">
+<p>Adds your own key to price and chart requests if the free limits run out. Get one at <a href="https://www.coingecko.com/en/api" target="_blank" rel="noopener">coingecko.com/en/api</a>.</p></details>
+<p class="note">Read-only. Prices are market estimates and refresh every 30 minutes (last updated <span id="pt">not yet</span>). <a href="https://www.coingecko.com/en/api" target="_blank" rel="noopener">Data provided by CoinGecko</a>.</p>
+<p class="note">Other data sources: <a href="https://www.blockscout.com" target="_blank" rel="noopener">Blockscout</a>, <a href="https://mempool.space" target="_blank" rel="noopener">mempool.space</a>, <a href="https://litecoinspace.org" target="_blank" rel="noopener">Litecoin Space</a>, <a href="https://dexscreener.com" target="_blank" rel="noopener">DexScreener</a>, <a href="https://www.publicnode.com" target="_blank" rel="noopener">PublicNode</a>, <a href="https://explorer.hyperlend.finance" target="_blank" rel="noopener">HyperLend explorer</a> and public Solana, BNB Chain and Hyperliquid nodes. CryptoScan is not affiliated with any of them.</p>
+<p class="note">CryptoScan is for information only. It is not financial, investment, tax or legal advice, and data may be delayed or wrong. Read the <a href="#/info/disclaimer">Disclaimer</a>, <a href="#/info/terms">Terms of Service</a> and <a href="#/info/privacy">Privacy Policy</a>.</p>
+<div class="fbar"><button class="cp" data-top>Back to Top</button><span id="cr"></span><span id="don"></span></div></div></footer>
+<script>
+const $=id=>document.getElementById(id),EVM=/^0x[0-9a-fA-F]{40}$/,T64=/^0x[0-9a-fA-F]{64}$/;
+const ev=(name,sym,cg,id,host)=>({name,sym,cg,type:'evm',id,host,a:EVM,t:T64});
+// Key order matters: when a pasted value fits several networks, the selected one wins, then the first listed.
+const NETS={
+ eth:{...ev('Ethereum','ETH','ethereum',1,'eth'),rpc:['https://ethereum-rpc.publicnode.com','https://eth.llamarpc.com']},
+ btc:{name:'Bitcoin',sym:'BTC',cg:'bitcoin',type:'esplora',api:['https://mempool.space/api','https://blockstream.info/api'],a:/^(bc1[a-zA-Z0-9]{25,87}|[13][1-9A-HJ-NP-Za-km-z]{25,34})$/,t:/^[0-9a-fA-F]{64}$/},
+ ltc:{name:'Litecoin',sym:'LTC',cg:'litecoin',type:'esplora',api:'https://litecoinspace.org/api',a:/^(ltc1[a-zA-Z0-9]{25,87}|[LM3][1-9A-HJ-NP-Za-km-z]{25,34})$/,t:/^[0-9a-fA-F]{64}$/},
+ sol:{name:'Solana',sym:'SOL',cg:'solana',type:'sol',rpc:['https://solana-rpc.publicnode.com','https://api.mainnet-beta.solana.com'],a:/^[1-9A-HJ-NP-Za-km-z]{32,44}$/,t:/^[1-9A-HJ-NP-Za-km-z]{86,90}$/},
+ bsc:{name:'BNB Chain',sym:'BNB',cg:'binancecoin',type:'bsc',rpc:['https://bsc-rpc.publicnode.com','https://bsc-dataseed.bnbchain.org'],a:EVM,t:T64},
+ poly:{...ev('Polygon','POL','polygon-ecosystem-token',137,'polygon'),rpc:['https://polygon-bor-rpc.publicnode.com','https://polygon-rpc.com']},
+ hype:{name:'Hyperliquid',sym:'HYPE',cg:'hyperliquid',type:'evm',base:'https://explorer.hyperlend.finance/api/v2',act:'Action',lbl:'HyperEVM',slow:true,rpc:['https://rpc.hyperliquid.xyz/evm','https://hyperliquid.drpc.org','https://rpc.hyperlend.finance'],a:EVM,t:T64,tokens:[],nb:5,scan:'https://hyperevmscan.io/address/',ex:'HyperEVMScan'}
+};
+const SPL={Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB:['USDT','Tether USD','tether'],EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v:['USDC','USD Coin','usd-coin']};
+const DX={eth:'ethereum',sol:'solana',bsc:'bsc',poly:'polygon',hype:'hyperevm'};
+const BEP=[['USDT','Tether USD','0x55d398326f99059fF775485246999027B3197955','tether'],['USDC','USD Coin','0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d','usd-coin'],['WBNB','Wrapped BNB','0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c','binancecoin'],['BTCB','Bitcoin BEP2','0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c','bitcoin'],['ETH','Binance-Peg Ethereum','0x2170Ed0880ac9A755fd29B2688956BD959F933F8','ethereum'],['CAKE','PancakeSwap','0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82'],['FDUSD','First Digital USD','0xc5f0f7b66764F6ec8C8Dff7BA683102295E16409'],['XRP','Binance-Peg XRP','0x1D2F0da169ceB9fC7B3144628dB156f3F6c60dBE'],['LINK','Chainlink','0xF8A0BF9cF54Bb92F17374d9e9A321E6a111a51bD'],['ADA','Binance-Peg Cardano','0x3EE2200Efb3400fAbB9AacF31297cBdD1d435D47'],['DAI','Dai','0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3'],['UNI','Uniswap','0xBf5140A22578168FD562DCcF235E5D43A02ce9B1'],['SHIB','Shiba Inu','0x2859e4544C4bB03966803b044A93563Bd2D0DD4D'],['LTC','Binance-Peg Litecoin','0x4338665CBB7B2485A8855A139b75D5e34AB0DB94']];
+const detect=(q,sel)=>{for(const id of [sel,...Object.keys(NETS)]){const n=NETS[id];if(n.a.test(q))return[id,'address'];if(n.t.test(q))return[id,'tx']}};
+
+// Token names come from the blockchain and can contain anything, so always escape them.
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const usd=(n,d=2)=>n.toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:d,minimumFractionDigits:Math.min(2,d)});
+const num=n=>n.toLocaleString(undefined,{maximumFractionDigits:Math.abs(n)<1?8:4});
+const short=h=>h.length>14?h.slice(0,6)+'…'+h.slice(-4):h;
+const units=(r,d)=>Number(r||0)/10**Number(d||0);
+const hex=h=>Number(BigInt(h&&h!=='0x'?h:'0x0'));
+const when=t=>t?new Date(t).toLocaleString(undefined,{timeZoneName:'short'}):'Pending';
+const ago=t=>{if(!t)return'Pending';const s=Math.max(0,(Date.now()-t)/1e3|0);return s<60?s+' sec ago':s<3600?(s/60|0)+' min ago':s<86400?(s/3600|0)+' hr ago':(s/86400|0)+' days ago'};
+const A=(net,a,full)=>a?`<a class="mono" href="#/address/${net}/${esc(a)}" title="${esc(a)}">${esc(full?a:short(a))}</a>`:'—';
+const T=(net,h)=>`<a class="mono" href="#/tx/${net}/${esc(h)}" title="${esc(h)}">${esc(short(h))}</a>`;
+const tbl=(head,rows)=>`<div class="wrap"><table><tr>${head.map(h=>`<th${h[0]==='>'?' class="n"':''}>${h.replace('>','')}</th>`).join('')}</tr>${rows.join('')}</table></div>`;
+const card=(k,v)=>`<div class="card"><span>${k}</span><b>${v}</b></div>`;
+const badge=(ok,t)=>`<span class="badge ${ok?'in':'out'}">${t}</span>`;
+const kvs=l=>`<div class="wrap">${l.map(([k,v])=>`<div class="kv"><span>${k}</span><div>${v}</div></div>`).join('')}</div>`;
+const fmt=(v,n)=>{const p=PX[n.cg]&&PX[n.cg].usd;return num(v)+' '+n.sym+(p?` (${usd(v*p)})`:'')};
+
+async function getJSON(url,opts){
+ let res;
+ try{res=await fetch(url,{cache:'no-store',...opts})}catch(e){throw new Error('Could not reach '+new URL(url).host+'. Check your connection, pause any ad or privacy blocker for this page, and make sure you opened the saved .html file in your browser, not a chat preview.')}
+ if(res.status===404)return null;
+ if(!res.ok)throw new Error(res.status===429?'Rate limited. Wait a few seconds and try again.':`The data source returned an error (${res.status}). Check the input and try again.`);
+ return res.json()
+}
+const rpc1=async(url,method,params)=>{const r=await getJSON(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});if(!r||r.error)throw new Error((r&&r.error&&r.error.message)||'The RPC node returned no data.');return r.result};
+// Try each endpoint in turn; the first one that answers wins.
+async function first(urls,fn){let err;for(const u of [].concat(urls)){try{return await fn(u)}catch(e){err=e}}throw err}
+const rpc=(urls,m,p)=>first(urls,u=>rpc1(u,m,p)),es=(n,p)=>first(n.api,u=>getJSON(u+p));
+const bs=n=>n.base?n.base:$('key').value.trim()?`https://api.blockscout.com/${n.id}/api/v2`:`https://${n.host}.blockscout.com/api/v2`;
+const BC={};
+const bget=(n,p)=>{const k=$('key').value.trim(),u=bs(n)+p+(k?(p.includes('?')?'&':'?')+'apikey='+encodeURIComponent(k):''),c=BC[u];if(c&&Date.now()-c.t<1e4)return c.p;const pr=getJSON(u);BC[u]={t:Date.now(),p:pr};pr.catch(()=>{delete BC[u]});return pr};
+
+// One CoinGecko call covers every network. Returns false if prices could not load.
+let PX={},PXT=0;const PX_MS=18e5; // prices go stale after 30 minutes
+async function prices(assets){
+ try{
+  if(!PX.bitcoin||Date.now()-PXT>PX_MS){const ids=[...new Set(Object.values(NETS).map(n=>n.cg)),'tether','usd-coin'],p=await getJSON(cgURL(`/simple/price?ids=${ids.join(',')}&vs_currencies=usd&include_24hr_change=true`)).catch(()=>null);if(p&&p.bitcoin){PX=p;PXT=Date.now();const t=$('pt');if(t)t.textContent=new Date(PXT).toLocaleTimeString(undefined,{timeZoneName:'short'})}}
+  for(const a of assets||[])if(!a.price&&a.cg&&PX[a.cg])a.price=PX[a.cg].usd;
+  return !!PX.bitcoin
+ }catch(e){return false}
+}
+
+// Fill in missing prices (and names of unlabeled Solana tokens) from DexScreener. Thinly traded pairs are ignored because they are often scams.
+async function dex(chain,assets){
+ const todo=assets.filter(a=>a.amt>0&&!a.price&&a.addr).slice(0,30);
+ if(!chain||!todo.length)return;
+ try{
+  const ps=(await getJSON(`https://api.dexscreener.com/tokens/v1/${chain}/${todo.map(a=>a.addr).join(',')}`))||[];
+  for(const a of todo){
+   const m=ps.filter(p=>p.baseToken&&p.baseToken.address.toLowerCase()===a.addr.toLowerCase()&&p.liquidity&&p.liquidity.usd>=10000).sort((x,y)=>y.liquidity.usd-x.liquidity.usd)[0];
+   if(m){a.price=Number(m.priceUsd)||null;if(a.name==='SPL token'){a.sym=m.baseToken.symbol;a.name=m.baseToken.name}}
+  }
+ }catch(e){}
+}
+// Address loaders: each returns {assets, txs}
+const LOAD={
+ async evm0(n,addr){
+  const[info,bal,txs]=await Promise.all([bget(n,`/addresses/${addr}`),bget(n,`/addresses/${addr}/token-balances`).catch(()=>null),bget(n,`/addresses/${addr}/transactions`).catch(()=>null)]);
+  const assets=[{sym:n.sym,name:n.name+' native coin',amt:units(info&&info.coin_balance,18),price:Number(info&&info.exchange_rate)||null,cg:n.cg}];
+  for(const t of Array.isArray(bal)?bal:(bal&&bal.items)||[]){const k=t.token;if(k&&k.type==='ERC-20')assets.push({addr:k.address_hash||k.address,sym:k.symbol||'?',name:k.name||'Unnamed token',amt:units(t.value,k.decimals),price:Number(k.exchange_rate)||null})}
+  const me=addr.toLowerCase();
+  return{assets,txs:((txs&&txs.items)||[]).slice(0,15).map(t=>{const sent=((t.from&&t.from.hash)||'').toLowerCase()===me;return{hash:t.hash,time:Date.parse(t.timestamp),dir:sent?'out':'in',other:sent?t.to&&t.to.hash:t.from&&t.from.hash,amt:units(t.value,18),sym:n.sym,failed:t.status==='error'}})}
+ },
+ async esplora(n,addr){
+  if(/^(bc1|ltc1)/i.test(addr))addr=addr.toLowerCase();
+  const[info,txs]=await Promise.all([es(n,`/address/${addr}`),es(n,`/address/${addr}/txs`)]);
+  const net=s=>((s&&s.funded_txo_sum)||0)-((s&&s.spent_txo_sum)||0),sats=net(info&&info.chain_stats)+net(info&&info.mempool_stats),mine=o=>o&&o.scriptpubkey_address===addr;
+  return{assets:[{sym:n.sym,name:n.name,amt:sats/1e8,cg:n.cg}],info,raw:txs||[],txs:(txs||[]).slice(0,25).map(t=>{
+   const d=t.vout.filter(mine).reduce((s,o)=>s+o.value,0)-t.vin.filter(i=>mine(i.prevout)).reduce((s,i)=>s+i.prevout.value,0);
+   const peer=d<0?t.vout.find(o=>!mine(o)):(t.vin.find(i=>i.prevout&&!mine(i.prevout))||{}).prevout;
+   return{hash:t.txid,time:t.status.confirmed?t.status.block_time*1000:null,dir:d<0?'out':'in',other:peer&&peer.scriptpubkey_address,amt:Math.abs(d)/1e8,sym:n.sym,failed:false}})}
+ },
+ async sol(n,addr){
+  const[bal,acct22,accts,sigs]=await Promise.all([rpc(n.rpc,'getBalance',[addr]),rpc(n.rpc,'getTokenAccountsByOwner',[addr,{programId:'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'},{encoding:'jsonParsed'}]).catch(()=>({value:[]})),rpc(n.rpc,'getTokenAccountsByOwner',[addr,{programId:'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'},{encoding:'jsonParsed'}]).catch(()=>({value:[]})),rpc(n.rpc,'getSignaturesForAddress',[addr,{limit:100}]).catch(()=>[])]);
+  const assets=[{sym:'SOL',name:'Solana native coin',amt:bal.value/1e9,cg:n.cg}];
+  const by={};for(const a of [...accts.value,...acct22.value]){const i=a.account.data.parsed.info,k=SPL[i.mint],amt=Number(i.tokenAmount.uiAmountString)||0;if(by[i.mint])by[i.mint].amt+=amt;else assets.push(by[i.mint]={addr:i.mint,sym:k?k[0]:short(i.mint),name:k?k[1]:'SPL token',amt,cg:k&&k[2]})}
+  return{assets,raw:sigs,txs:sigs.map(s=>({hash:s.signature,time:s.blockTime?s.blockTime*1000:null,dir:'',failed:!!s.err}))}
+ },
+ async bsc(n,addr){
+  const bnb=await rpc(n.rpc,'eth_getBalance',[addr,'latest']),bal=await Promise.all((n.tokens||BEP).map(t=>rpc(n.rpc,'eth_call',[{to:t[2],data:'0x70a08231'+addr.slice(2).toLowerCase().padStart(64,'0')},'latest']).catch(()=>'0x')));
+  return{assets:[{sym:n.sym,name:n.name+' native coin',amt:units(hex(bnb),18),cg:n.cg},...(n.tokens||BEP).map((t,i)=>({addr:t[2],sym:t[0],name:t[1],amt:units(hex(bal[i]),18),cg:t[3]}))],txs:[],more:(n.scan||'https://bscscan.com/address/')+addr}
+ }
+};
+
+LOAD.evm=(n,a)=>LOAD.evm0(n,a).catch(e=>{if(n.tokens)return LOAD.bsc(n,a);throw e}); // Hyperliquid falls back to a node balance if its explorer API is unreachable
+async function addrPage(n,id,addr){
+ const r=await LOAD[n.type](n,addr),ok=await prices(r.assets);await dex(DX[id],r.assets);
+ // Assets with a known price or CoinGecko id are counted. The rest are usually spam tokens.
+ const held=r.assets.filter(a=>a.amt>0),main=held.filter(a=>a.price||a.cg).map(a=>({...a,val:a.price?a.amt*a.price:0})).sort((a,b)=>b.val-a.val),rest=held.filter(a=>!a.price&&!a.cg),total=main.reduce((s,a)=>s+a.val,0),nat=r.assets[0];
+ LAST={main,rest,total,nat,held,r};const hold=main.length?tbl(['Asset','Name','>Balance','>Price','>Value'],main.map(a=>`<tr><td><b>${esc(a.sym)}</b></td><td>${esc(a.name)}</td><td class="n">${num(a.amt)}</td><td class="n">${a.price?usd(a.price,a.price<1?6:2):'—'}</td><td class="n">${a.price?usd(a.val):'—'}</td></tr>`)):'<p class="note">No balances found on this network.</p>';
+ const spam=rest.length?`<h2>${rest.length} tokens without a market price</h2><p class="note">Many of these are airdropped spam. Do not interact with or approve them.</p>${tbl(['Asset','Name','>Balance'],rest.slice(0,50).map(a=>`<tr><td>${esc(a.sym)}</td><td>${esc(a.name)}</td><td class="n">${num(a.amt)}</td></tr>`))}`:'';
+ const tx=r.txs.length?tbl(['Transaction','Age','Type','Counterparty','>Amount','Status'],r.txs.map(t=>`<tr><td>${T(id,t.hash)}</td><td>${ago(t.time)}</td><td class="${t.dir==='out'?'out':'in'}">${{out:'Sent',in:'Received'}[t.dir]||'—'}</td><td>${A(id,t.other)}</td><td class="n">${t.amt==null?'—':num(t.amt)+' '+esc(t.sym)}</td><td>${t.failed?'<span class="out">Failed</span>':'<span class="in">Success</span>'}</td></tr>`)):r.more?`<p class="note"><a href="${esc(r.more)}" target="_blank" rel="noopener">View transaction history on ${esc(n.ex||'BscScan')}</a></p>`:'<p class="note">No transactions found on this network.</p>';
+ return`<h1>Address on ${esc(n.name)}</h1><p><span class="mono">${esc(addr)}</span><button class="cp" data-c="${esc(addr)}">Copy</button></p>
+<div class="cards">${card('Balance',num(nat.amt)+' '+esc(nat.sym))}${card('Total value',usd(total))}${card('Assets held',held.length)}</div>
+${ok?'':'<p class="note">Live prices could not be loaded, so values may be incomplete.</p>'}
+<h2>Assets held</h2>${hold}${spam}${n.a===EVM?'<div id="sp"></div>':''}<h2>Transactions</h2>${tx}
+`
+}
+
+const AD={img:'',url:'',alt:''}; // to show a real ad, set img (image link) and url; leave empty for the placeholder
+const adBox=()=>`<div class="adbox"><span class="adtag">Ad</span>${AD.img?`<a href="${esc(AD.url)}" target="_blank" rel="noopener sponsored"><img src="${esc(AD.img)}" alt="${esc(AD.alt||'Advertisement')}"></a>`:'<a href="#/info/advertise"><b>Your ad here</b><span>Reach people searching the blockchain. Advertise on CryptoScan.</span></a>'}</div>`;
+let LAST,NFT=[],MC=null,TS={q:'',page:1,rows:10,sub:'m'},AROWS=[],ATOT=0,ACH='';
+async function spread(id,addr){
+ const res=await Promise.all(Object.keys(NETS).filter(k=>NETS[k].a===EVM&&k!==id).map(async k=>{
+  const n=NETS[k];let v=0;
+  try{
+   if(n.type==='evm'){
+    const[i,bl]=await Promise.all([bget(n,`/addresses/${addr}`),bget(n,`/addresses/${addr}/token-balances`).catch(()=>null)]),tk=(Array.isArray(bl)?bl:(bl&&bl.items)||[]).filter(x=>x.token&&x.token.type==='ERC-20'&&Number(x.value)>0);
+    v=units(i&&i.coin_balance,18)*(Number(i&&i.exchange_rate)||0)+tk.reduce((q,x)=>q+units(x.value,x.token.decimals)*(Number(x.token.exchange_rate)||0),0)
+   }else v=units(hex(await rpc(n.rpc,'eth_getBalance',[addr,'latest'])),18)*((PX[n.cg]||{}).usd||0)
+  }catch(e){}
+  return{k,n,v}}));
+ const sum=res.reduce((q,x)=>q+x.v,LAST?LAST.total:0),have=res.filter(x=>x.v>0);MC={addr,res,sum};const pa=$('p-a');if(pa&&LAST&&location.hash.toLowerCase().includes(addr.toLowerCase())){pa.innerHTML=assetsHTML(NETS[id],id,addr);drawTok()}
+ return`<div class="mc">${usd(sum)} <span>(Multichain Portfolio)</span></div>`+(have.length?`<div class="mcl">${have.map(x=>`<a href="#/address/${x.k}/${addr}">${esc(x.n.name)}</a><b>${usd(x.v)}</b>`).join('')}</div>`:'<p class="note">No balances found on other networks.</p>')
+}
+async function evmTop(n,id,addr){
+ const[info,tx]=await Promise.all(['/addresses/'+addr,'/addresses/'+addr+'/transactions'].map(q=>bget(n,q).catch(()=>null)));
+ const me=addr.toLowerCase(),L=LAST||{main:[],rest:[],nat:{amt:0}},nat=L.nat,toks=L.main.filter(a=>!/native coin$/.test(a.name));
+ const fw=w=>{const t=String(w||'0').padStart(19,'0'),f=t.slice(-18).replace(/0+$/,'');return Number(t.slice(0,-18)).toLocaleString()+(f?'.'+f:'')};
+ const items=(tx&&tx.items)||[],full=!!tx&&!tx.next_page_params,eq=(a,h)=>a&&a.hash&&a.hash.toLowerCase()===h;
+ const sent=items.filter(t=>eq(t.from,me)),got=items.filter(t=>eq(t.to,me)&&!eq(t.from,me)),fund=full&&got.length?got[got.length-1]:null;
+ const lk=t=>t?`<a href="#/tx/${id}/${esc(t.hash)}">${ago(Date.parse(t.timestamp))} ↗</a>`:'—';
+ let tag='';try{tag=localStorage.getItem('tag:'+me)||''}catch(e){}
+ const h1=parseInt(me.slice(2,6),16)%360,h2=parseInt(me.slice(-4),16)%360,tv=toks.reduce((q,a)=>q+a.val,0),px=nat.price||(PX[n.cg]||{}).usd||0;
+ const tt=toks.length?tbl(['Token','>Balance','>Value'],toks.map(a=>`<tr><td>${esc(a.sym)}</td><td class="n">${num(a.amt)}</td><td class="n">${a.price?usd(a.val):'—'}</td></tr>`)):'<p class="note">No priced tokens.</p>';
+ return`<div class="ahead"><span class="av" style="background:linear-gradient(135deg,hsl(${h1} 70% 55%),hsl(${h2} 70% 45%))"></span><h1>Address</h1><span class="mono">${esc(addr)}</span><button class="cp" data-c="${esc(addr)}">Copy</button></div>
+<p class="sponsor"><b>Sponsored:</b> <a href="#/info/advertise">Your ad here</a> <span>Reach people searching the blockchain.</span></p><div class="three">
+<div class="ic"><h3>Overview</h3><div class="l">${esc(n.sym)} BALANCE</div><div class="v">${fw(info&&info.coin_balance)} ${esc(n.sym)}</div><div class="l">${esc(n.sym)} VALUE</div><div class="v">${usd(nat.amt*px)} <span>(@ ${usd(px)}/${esc(n.sym)})</span></div><div class="l">TOKEN HOLDINGS</div><details class="dd"><summary>${usd(tv)} <span>(${toks.length} Tokens)</span></summary>${tt}${L.rest.length?`<p class="note">+ ${L.rest.length} without a market price</p>`:''}</details></div>
+<div class="ic"><h3>More Info</h3><div class="l">PRIVATE NAME TAG</div><div class="v"><button class="tag" data-tag="${esc(me)}">${tag?esc(tag):'+ Add'}</button></div><div class="l">TRANSACTIONS SENT</div><div class="v">Latest: ${lk(sent[0])} &nbsp; First: ${full?lk(sent[sent.length-1]):'—'}</div><div class="l">FUNDED BY</div><div class="v">${fund?A(id,fund.from.hash)+' | '+ago(Date.parse(fund.timestamp)):'—'}</div></div>
+<div class="ic"><h3>Multichain Info</h3><div id="sp" class="note">Loading…</div>${adBox()}</div>
+</div>`
+}
+async function evmTabs(n,id,addr){
+ const[tx,tk,ct,st,it,nf]=await Promise.all(['/addresses/'+addr+'/transactions','/addresses/'+addr+'/token-transfers?type=ERC-20','/addresses/'+addr+'/counters','/stats','/addresses/'+addr+'/internal-transactions','/addresses/'+addr+'/nft/collections'].map(q=>bget(n,q).catch(()=>null)));
+ const me=addr.toLowerCase(),px=PX[n.cg]||{},ch=px.usd_24h_change;
+ const who=a=>{if(!a)return'—';const h=a.hash,l=a.ens_domain_name||a.name;return h.toLowerCase()===me?`<span class="me mono">${esc(short(h))}</span>`:`<a${l?'':' class="mono"'} href="#/address/${id}/${esc(h)}" title="${esc(h)}">${esc(l?(l.length>22?l.slice(0,21)+'…':l):short(h))}</a>`};
+ const dir=(f,t)=>{const a=((f&&f.hash)||'').toLowerCase()===me,b=((t&&t.hash)||'').toLowerCase()===me;return a&&b?'<span class="dir self">SELF</span>':a?'<span class="dir o">OUT</span>':'<span class="dir i">IN</span>'};
+ const card2=(title,head,rows,none,foot='')=>`<div class="tcard"><div class="thead">${title}</div>${rows.length?tbl(head,rows):`<p class="note" style="padding:0 16px 14px">${none}</p>`}${foot}</div>`;
+ const txr=((tx&&tx.items)||[]).slice(0,25).map(t=>`<tr><td>${T(id,t.hash)}</td><td><span class="meth${t.status==='error'?' bad':''}">${esc((m=>m?m[0].toUpperCase()+m.slice(1):'Transfer')(t.method||(t.raw_input&&t.raw_input.length>=10?t.raw_input.slice(0,10):'')))}</span></td><td>${esc(t.block_number??t.block??'—')}</td><td>${ago(Date.parse(t.timestamp))}</td><td>${who(t.from)}</td><td>${dir(t.from,t.to)}</td><td>${t.to?who(t.to):'Contract creation'}</td><td class="n">${num(units(t.value,18))} ${n.sym}</td><td class="n">${num(units(t.fee&&t.fee.value,18))}</td></tr>`);
+ const tkr=((tk&&tk.items)||[]).slice(0,25).map(x=>`<tr><td>${T(id,x.transaction_hash||x.tx_hash||'')}</td><td>${ago(Date.parse(x.timestamp))}</td><td>${who(x.from)}</td><td>${dir(x.from,x.to)}</td><td>${who(x.to)}</td><td class="n">${num(units(x.total&&x.total.value,(x.total&&x.total.decimals)||(x.token&&x.token.decimals)))}</td><td>${esc((x.token&&(x.token.symbol||x.token.name))||'?')}</td></tr>`);
+ NFT=(nf&&nf.items)||[];const itr=((it&&it.items)||[]).slice(0,25).map(x=>`<tr><td>${T(id,x.transaction_hash||'')}</td><td><span class="meth">${esc(x.type||'call')}</span></td><td>${esc(x.block_number??'—')}</td><td>${ago(Date.parse(x.timestamp))}</td><td>${who(x.from)}</td><td>${dir(x.from,x.to)}</td><td>${x.to?who(x.to):'—'}</td><td class="n">${num(units(x.value,18))} ${n.sym}</td></tr>`);
+ const total=ct&&Number(ct.transactions_count),tab=(k,t,on)=>`<button${on?' class="on"':''} data-t="${k}">${t}</button>`;
+ return{
+  strip:`<p class="strip">${esc(n.sym)} Price: <b>${px.usd?usd(px.usd):'—'}</b>${ch==null?'':` <span class="${ch<0?'out':'in'}">(${ch>0?'+':''}${ch.toFixed(2)}%)</span>`}${st&&st.gas_prices&&st.gas_prices.average!=null?` &nbsp;·&nbsp; Gas: <b>${num(Number(st.gas_prices.average))} Gwei</b>`:''}</p>`,
+  tabs:`<div class="tabs">${tab('t','Transactions',1)}${tab('k','Token Transfers (ERC-20)')}${tab('o','Other Transactions')}${tab('a','Assets')}</div>`,
+  tx:card2(`Latest ${txr.length}${total?' from a total of '+total.toLocaleString()+' transactions':' transactions'}`,['Transaction Hash',n.act||'Method','Block','Age','From','','To','>Amount','>Txn Fee'],txr,'No transactions found.',txr.length?`<a class="viewall" href="${esc((n.scan||`https://${n.host}.blockscout.com/address/`)+addr)}" target="_blank" rel="noopener">VIEW ALL TRANSACTIONS →</a>`:'')+`<p class="note csv">[ Download: <button class="cp" data-csv>CSV Export</button> ]</p><p class="note">A wallet address is a public address that lets its owner receive funds. To move the funds, you need its private key. Learn more in the <a href="#/info/kb">Knowledge Base</a>.</p>`,
+  it:card2(`Latest ${itr.length} internal transactions`,['Transaction Hash','Type','Block','Age','From','','To','>Amount'],itr,'No internal transactions found.'),
+  tk:card2(`Latest ${tkr.length} ERC-20 token transfers`,['Transaction Hash','Age','From','','To','>Amount','Token'],tkr,'No ERC-20 transfers found.')
+ }
+}
+const PAL=['#4c8dff','#ff9f1c','#9d7bff','#2bd9a6','#ff5fae','#8a9bb8'];
+function assetsHTML(n,id,addr){
+ const L=LAST,mc=MC&&MC.addr===addr?MC:null,px=L.nat.price||(PX[n.cg]||{}).usd||0,total=mc?mc.sum:L.total,nm=x=>x.lbl||x.name;
+ const rows=L.held.map(a=>({...a,val:a.price?a.amt*a.price:0})).sort((a,b)=>b.val-a.val||b.amt-a.amt);
+ AROWS=rows;ATOT=total;ACH=nm(n).toUpperCase();
+ const oth=mc?mc.res:[],top=rows.filter(a=>a.val>0).slice(0,4),rest=L.total-top.reduce((q,a)=>q+a.val,0);
+ const seg=[...top.map(a=>[a.sym,a.val]),...(rest>0.005?[['Other tokens',rest]]:[]),...oth.filter(x=>x.v>0).map(x=>[nm(x.n),x.v])];
+ const bar=total>0?`<div class="bar">${seg.map((g,i)=>`<i style="width:${g[1]/total*100}%;background:${PAL[i%PAL.length]}"></i>`).join('')}</div><div class="leg">${seg.map((g,i)=>`<span><u style="background:${PAL[i%PAL.length]}"></u>${esc(g[0])} <b>${(g[1]/total*100).toFixed(2)}%</b></span>`).join('')}</div>`:'';
+ const chips=[[nm(n),L.total,rows.length],...oth.map(x=>[nm(x.n),x.v,0])],zero=chips.filter(c=>!(c[1]>0)&&!c[2]).length;
+ const hs=a=>[...a].reduce((q,c)=>(q*31+c.charCodeAt(0))%360,7),h1=hs(addr),h2=hs([...addr].reverse().join('')),sub=TS.sub,on=k=>sub===k?' class="on"':'';
+ const nft=NFT.length?tbl(['Collection','Symbol','Standard','>Count'],NFT.map(x=>`<tr><td>${esc((x.token&&x.token.name)||'Unnamed')}</td><td>${esc((x.token&&x.token.symbol)||'—')}</td><td>${esc((x.token&&x.token.type)||'—')}</td><td class="n">${esc(x.amount??'—')}</td></tr>`)):'<p class="note">No NFTs found.</p>';
+ return`<div class="asrow"><div class="seg"><button${on('m')} data-s="m">Multichain Portfolio</button><button${on('k')} data-s="k">Tokens</button><button${on('f')} data-s="f">NFTs</button></div><span class="achip"><span class="av sm" style="background:linear-gradient(135deg,hsl(${h1} 70% 55%),hsl(${h2} 70% 45%))"></span><span class="mono">${esc(addr)}</span></span></div>
+<div id="as-sum"${sub==='m'?'':' hidden'}>
+<div class="nw"><div><div class="l">NET WORTH IN USD</div><div class="big">${usd(total)}</div></div><div><div class="l">NET WORTH IN ${esc(n.sym)}</div><div class="big">${px?num(Math.round(total/px*1e6)/1e6):'—'}</div></div><div class="bw">${bar}</div></div>
+<div class="asrow" style="margin-top:22px"><h3 style="margin:0">Multichain Portfolio | ${chips.length} Chain${chips.length>1?'s':''}</h3><span class="note"><button class="lnk" data-mc>Display all chains</button> &nbsp;•&nbsp; Last updated: ${esc(new Date().toLocaleTimeString(undefined,{timeZoneName:'short'}))}</span></div>
+<div class="chips" id="as-chains">${chips.map(c=>`<div class="chip${c[1]>0||c[2]?'':' z'}"><b>${esc(c[0])}</b>${c[2]?` (${c[2]})`:''}<div>${usd(c[1],0)} <span>(${total>0?Math.round(c[1]/total*100):0}%)</span></div></div>`).join('')}${zero?`<button class="lnk" data-mc>+ Show ${zero} more chains</button>`:''}</div>
+</div>
+<div id="as-tok"${sub==='f'?' hidden':''}><h3>Tokens</h3><div class="tk"><div class="tkh"><span id="tk-info"></span><input id="tq" placeholder="Search" value="${esc(TS.q)}" aria-label="Search tokens"></div><div id="tk-body"></div><div class="pgr" id="tk-pg"></div></div>
+${n.a===EVM?`<a class="viewall" style="margin-top:14px;border:1px solid var(--ln);border-radius:12px" href="https://blockscan.com/address/${esc(addr)}" target="_blank" rel="noopener">View full multichain balance on Blockscan</a>`:''}</div>
+<div id="as-nft"${sub==='f'?'':' hidden'}><h3>NFTs</h3>${nft}</div>
+<p class="note">A wallet address is a public address that lets its owner receive funds. To move the funds, you need its private key. Learn more in the <a href="#/info/kb">Knowledge Base</a>.</p>`
+}
+function drawTok(){
+ const q=TS.q.toLowerCase(),f=AROWS.filter(a=>!q||(a.sym+' '+a.name).toLowerCase().includes(q)),pages=Math.max(1,Math.ceil(f.length/TS.rows));
+ TS.page=Math.min(Math.max(1,TS.page),pages);
+ const part=f.slice((TS.page-1)*TS.rows,TS.page*TS.rows),tot=AROWS.reduce((q2,a)=>q2+a.val,0);
+ $('tk-info').innerHTML=`Showing ${f.length} tokens with a value of <b>${usd(tot,0)}</b>`;
+ $('tk-body').innerHTML=tbl(['Chain','Token','>Portfolio %','>Price','>Amount','>Value'],part.map(a=>`<tr><td class="mu">${esc(ACH)}</td><td><b>${esc(a.name)}</b> <span class="mu">(${esc(a.sym)})</span></td><td class="n">${ATOT>0?(a.val/ATOT*100).toFixed(2):'0.00'}%</td><td class="n">${a.price?usd(a.price,a.price<1?6:2):'—'}</td><td class="n">${num(a.amt)}</td><td class="n">${a.price?usd(a.val):'—'}</td></tr>`));
+ $('tk-pg').innerHTML=`<span>Show rows: <select id="rw">${[10,25,50].map(x=>`<option${x===TS.rows?' selected':''}>${x}</option>`).join('')}</select></span><span class="pg"><button data-pg="first">First</button><button data-pg="prev">‹</button><span>Page ${TS.page} of ${pages}</span><button data-pg="next">›</button><button data-pg="last">Last</button></span>`;
+}
+const ex=(v,d)=>v.toFixed(d).replace(/(\.\d*?)0+$/,'$1').replace(/\.$/,'');
+const card3=(title,head,rows,none,foot='')=>`<div class="tcard"><div class="thead">${title}</div>${rows.length?tbl(head,rows):`<p class="note" style="padding:0 16px 14px">${none}</p>`}${foot}</div>`;
+async function addrAny(n,id,addr){
+ TS={q:'',page:1,rows:10,sub:'m'};NFT=[];
+ await addrPage(n,id,addr);
+ const L=LAST,r=L.r,nat=L.nat,px=nat.price||(PX[n.cg]||{}).usd||0,ch=(PX[n.cg]||{}).usd_24h_change,ty=n.type,sym=esc(n.sym);
+ const dirb=d=>d==='out'?'<span class="dir o">OUT</span>':d==='in'?'<span class="dir i">IN</span>':'';
+ const lk=t=>t?`<a href="#/tx/${id}/${esc(t.hash)}">${ago(t.time)} ↗</a>`:'—';
+ const toks=L.main.filter(a=>a.addr),tv=toks.reduce((q,a)=>q+a.val,0);
+ let bal=ex(nat.amt,ty==='sol'?9:8),gas='',third='',rows=[],head=[],title='Transactions',lat='—',fst='—',fund='—',view='',none='No transactions found.',trh='';
+ if(ty==='esplora'){
+  const cs=(r.info&&r.info.chain_stats)||{},ms=(r.info&&r.info.mempool_stats)||{},cnt=(cs.tx_count||0)+(ms.tx_count||0),raw=r.raw||[],full=cnt<=raw.length;
+  const fee=await es(n,'/v1/fees/recommended').catch(()=>null);
+  gas=fee&&fee.halfHourFee!=null?` &nbsp;·&nbsp; Fee: <b>${fee.halfHourFee} sat/vB</b>`:'';
+  head=['Transaction Hash','Block','Age','','>Amount','>Txn Fee'];
+  rows=r.txs.map((t,i)=>{const w=raw[i],c=w.status&&w.status.confirmed;return`<tr><td>${T(id,t.hash)}</td><td>${c?esc(w.status.block_height):'Pending'}</td><td>${ago(t.time)}</td><td>${dirb(t.dir)}</td><td class="n">${t.dir==='out'?'−':'+'}${num(t.amt)} ${sym}</td><td class="n">${num(w.fee/1e8)}</td></tr>`});
+  title=`Latest ${rows.length} from a total of ${cnt.toLocaleString()} transactions`;
+  lat=lk(r.txs[0]);fst=full?lk(r.txs[r.txs.length-1]):'—';
+  const ix=r.txs.map(t=>t.dir).lastIndexOf('in'),w=full&&ix>=0?raw[ix]:null,src=w&&w.vin[0]&&w.vin[0].prevout&&w.vin[0].prevout.scriptpubkey_address;
+  fund=src?A(id,src)+' | '+ago(r.txs[ix].time):'—';
+  view=[].concat(n.api)[0].replace(/\/api$/,'')+'/address/'+addr;
+  third=`<div class="l">TOTAL RECEIVED</div><div class="v">${ex((cs.funded_txo_sum||0)/1e8,8)} ${sym}</div><div class="l">TOTAL SENT</div><div class="v">${ex((cs.spent_txo_sum||0)/1e8,8)} ${sym}</div>`;
+ }else if(ty==='sol'){
+  const sg=r.raw||[],full=sg.length<100;
+  const dt=await solDetail(addr,sg.slice(0,25)).catch(()=>({}));
+  head=['','Signature','Age','Action','Counterparty','','>Amount (SOL)','>Value','Tokens','>Fee (SOL)','Program'];
+  rows=sg.slice(0,25).map(x=>{const d=dt[x.signature]||{},dr=d.net>1e-9?'in':d.net<-1e-9?'out':'',cp=d.from===addr?d.to:d.from;return`<tr><td><a class="eye" href="#/tx/${id}/${esc(x.signature)}" title="Open transaction">${IC.eye}</a></td><td style="white-space:nowrap">${x.err?'<span class="bad" title="Failed">!</span> ':''}${T(id,x.signature)}${cpb(x.signature)}</td><td>${ago(x.blockTime?x.blockTime*1000:null)}</td><td>${d.ins?`<span class="pillx">${esc(d.ins[0]||'—')}</span>${d.ins.length>1?`<span class="pillx m">${d.ins.length-1}+</span>`:''}`:'—'}</td><td>${cp?A(id,cp):'—'}</td><td>${dirb(dr)}</td><td class="n ${dr}">${d.net==null?'—':(dr==='out'?'−':dr==='in'?'+':'')+fs(Math.abs(d.net))}</td><td class="n">${d.net==null||!px?'—':usd(Math.abs(d.net*px))}</td><td>${(d.tk||[]).slice(0,2).map(([m,v])=>`<span class="${v<0?'out':'in'}">${v<0?'−':'+'}${num(Math.abs(v))} ${esc(tkSym(m))}</span>`).join('<br>')||'—'}</td><td class="n">${d.fee==null?'—':fs(d.fee)}</td><td style="white-space:nowrap">${(d.prg||[]).slice(0,3).map(q=>`<span class="prg" title="${esc(PRG[q]||q)}" style="background:hsl(${hue(q)} 55% 42%)">${esc((PRG[q]||q).slice(0,2).toUpperCase())}</span>`).join('')}</td></tr>`});
+  const tr=[],act=d=>{const t=(d.ins||[]).join(' ');return/closeAccount/i.test(t)?['CLOSE ACCOUNT','c']:/mintTo/i.test(t)?['MINT','m']:['TRANSFER','t']};
+  sg.slice(0,25).forEach(x=>{const d=dt[x.signature];if(!d)return;const cpx=d.from===addr?d.to:d.from,a=act(d),base=`<td>${T(id,x.signature)}</td><td>${ago(x.blockTime?x.blockTime*1000:null)}</td><td><span class="actb ${a[1]}">${a[0]}</span></td>`;
+   const add=(v,sy,uv)=>{const out=v<0,me=A(id,addr),o=cpx?A(id,cpx):'—';tr.push(`<tr>${base}<td>${out?me:o}</td><td>${out?o:me}</td><td class="n ${out?'out':'in'}">${out?'−':'+'}${num(Math.abs(v))}</td><td class="n">${uv}</td><td>${esc(sy)}</td></tr>`)};
+   if(Math.abs(d.net)>1e-9)add(d.net,'SOL',px?usd(Math.abs(d.net*px)):'—');
+   (d.tk||[]).forEach(([m,v])=>add(v,tkSym(m),'N/A'))});
+  trh=card3(`Latest ${tr.length} transfers`,['Signature','Age','Action','From','To','>Amount','>Value','Token'],tr,'No transfers found.');
+  title=`Latest ${rows.length} from a total of ${full?sg.length:'100+'} transactions`+(()=>{const v=Object.values(dt).filter(Boolean),i=v.reduce((q,d)=>q+Math.max(0,d.net),0),o=v.reduce((q,d)=>q+Math.max(0,-d.net),0);return v.length?` <span class="mu">· received</span> <span class="in">+${fs(i)} SOL</span> <span class="mu">· sent</span> <span class="out">−${fs(o)} SOL</span>`:''})();
+  lat=lk(r.txs[0]);fst=full?lk(r.txs[r.txs.length-1]):'—';view='https://explorer.solana.com/address/'+addr;
+ }else{
+  const g=await rpc(n.rpc,'eth_gasPrice',[]).then(x=>hex(x)/1e9,()=>null);
+  gas=g!=null?` &nbsp;·&nbsp; Gas: <b>${num(g)} Gwei</b>`:'';
+  none='Transaction history for this network is not available from free public nodes. Use the link below to see it on '+esc(n.ex||'BscScan')+'.';view=r.more;
+ }
+ const tt=toks.length?tbl(['Token','>Balance','>Value'],toks.map(a=>`<tr><td>${esc(a.sym)}</td><td class="n">${num(a.amt)}</td><td class="n">${a.price?usd(a.val):'—'}</td></tr>`)):'<p class="note">No priced tokens.</p>';
+ if(!third)third=`<div class="l">TOKEN HOLDINGS</div><details class="dd"><summary>${usd(tv)} <span>(${toks.length} Tokens)</span></summary>${tt}${L.rest.length?`<p class="note">+ ${L.rest.length} without a market price</p>`:''}</details>`;
+ const me=addr.toLowerCase();let tag='';try{tag=localStorage.getItem('tag:'+me)||''}catch(e){}
+ const hs=a=>[...a].reduce((q,c)=>(q*31+c.charCodeAt(0))%360,7),h1=hs(addr),h2=hs([...addr].reverse().join(''));
+ const multi=n.a===EVM?'<div id="sp" class="note">Loading…</div>':`<div class="mc">${usd(L.total)} <span>(Multichain Portfolio)</span></div><p class="note">This kind of address only exists on ${esc(n.name)}.</p>`;
+ const foot=view?`<a class="viewall" href="${esc(view)}" target="_blank" rel="noopener">VIEW ALL TRANSACTIONS →</a>`:'';
+ const txh=card3(title,head,rows,none,foot)+(rows.length?'<p class="note csv">[ Download: <button class="cp" data-csv>CSV Export</button> ]</p>':'')+'<p class="note">A wallet address is a public address that lets its owner receive funds. To move the funds, you need its private key. Learn more in the <a href="#/info/kb">Knowledge Base</a>.</p>';
+ return`<p class="strip">${sym} Price: <b>${px?usd(px):'—'}</b>${ch==null?'':` <span class="${ch<0?'out':'in'}">(${ch>0?'+':''}${ch.toFixed(2)}%)</span>`}${gas}</p>
+<div class="ahead"><span class="av" style="background:linear-gradient(135deg,hsl(${h1} 70% 55%),hsl(${h2} 70% 45%))"></span><h1>Address</h1><span class="mono">${esc(addr)}</span><button class="cp" data-c="${esc(addr)}">Copy</button></div>
+<p class="sponsor"><b>Sponsored:</b> <a href="#/info/advertise">Your ad here</a> <span>Reach people searching the blockchain.</span></p>
+<div class="three">
+<div class="ic"><h3>Overview</h3><div class="l">${sym} BALANCE</div><div class="v">${bal} ${sym}</div><div class="l">${sym} VALUE</div><div class="v">${usd(nat.amt*px)} <span>(@ ${usd(px)}/${sym})</span></div>${third}</div>
+<div class="ic"><h3>More Info</h3><div class="l">PRIVATE NAME TAG</div><div class="v"><button class="tag" data-tag="${esc(me)}">${tag?esc(tag):'+ Add'}</button></div><div class="l">TRANSACTIONS</div><div class="v">Latest: ${lat} &nbsp; First: ${fst}</div><div class="l">FUNDED BY</div><div class="v">${fund}</div></div>
+<div class="ic"><h3>Multichain Info</h3>${multi}${adBox()}</div>
+</div>
+<div class="tabs"><button class="on" data-t="t">Transactions</button>${ty==='sol'?'<button data-t="r">Transfers</button><button data-t="n">Analytics</button>':''}<button data-t="a">Assets</button></div>
+<section id="p-t">${txh}</section>${ty==='sol'?`<section id="p-r" hidden>${trh}</section><section id="p-n" hidden>${solAnHTML(addr)}</section>`:''}<section id="p-a" hidden>${assetsHTML(n,id,addr)}</section>`
+}
+const CG={key:'',pro:false}; // owner setting: put a CoinGecko key here (pro:true for a paid plan). Keys placed in a web page are visible to visitors, so for a public site route requests through your own server instead.
+const cgURL=p=>{const k=($('cgk')&&$('cgk').value.trim())||CG.key,pr=CG.pro&&!!k;return(pr?'https://pro-api.coingecko.com/api/v3':'https://api.coingecko.com/api/v3')+p+(k?(p.includes('?')?'&':'?')+(pr?'x_cg_pro_api_key=':'x_cg_demo_api_key=')+encodeURIComponent(k):'')};
+const AN={coin:'',days:1,metric:'prices',data:null,req:0,g:null};
+const COINS=()=>[...new Map(Object.values(NETS).map(n=>[n.cg,n])).values()];
+const big=v=>v==null?'—':v>=1e12?(v/1e12).toFixed(2)+'T':v>=1e9?(v/1e9).toFixed(2)+'B':v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e3?Math.round(v).toLocaleString():num(v);
+const chg=v=>v==null?'—':`<span class="chg ${v<0?'dn':'up'}">${v>0?'+':''}${v.toFixed(2)}%</span>`;
+const hrate=h=>{const u=['H/s','kH/s','MH/s','GH/s','TH/s','PH/s','EH/s'];let i=0;while(h>=1e3&&i<6){h/=1e3;i++}return h.toFixed(2)+' '+u[i]};
+const kv=r=>r.map(([k,v])=>`<div class="kvi"><span>${esc(k)}</span><b>${v}</b></div>`).join('');
+let MKT=null,MKT_T=0;
+async function anMarkets(){
+ if(MKT&&Date.now()-MKT_T<3e4)return MKT;
+ const r=await getJSON(cgURL(`/coins/markets?vs_currency=usd&ids=${COINS().map(c=>c.cg).join(',')}&price_change_percentage=1h,24h,7d,30d&sparkline=true`));
+ if(!Array.isArray(r)||!r.length)throw new Error('No market data came back. CoinGecko may be limiting this browser. Wait a minute, or add a CoinGecko API key in the footer.');
+ MKT=r;MKT_T=Date.now();return r
+}
+function spark(a){const p=a.filter((_,i)=>i%3===0),lo=Math.min(...p),hi=Math.max(...p),w=110,h=34,col=p[p.length-1]>=p[0]?'var(--ok)':'var(--bad)';return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline fill="none" stroke="${col}" stroke-width="1.6" points="${p.map((v,i)=>(i/(p.length-1)*w).toFixed(1)+','+(h-2-(v-lo)/(hi-lo||1)*(h-4)).toFixed(1)).join(' ')}"/></svg>`}
+function chartSVG(d,o){
+ const W=900,H=o.h||300,L=72,R=12,B=26,T=12,xs=d.map(p=>p[0]),ys=d.map(p=>p[1]),x0=xs[0],x1=xs[xs.length-1],hi=Math.max(...ys),lo=o.bars?0:Math.min(...ys),pd=o.bars?hi*.05:(hi-lo)*.08||hi*.01,a=o.bars?0:lo-pd,b=hi+pd;
+ const X=t=>L+(t-x0)/(x1-x0||1)*(W-L-R),Y=v=>H-B-(v-a)/(b-a||1)*(H-B-T),last=ys[ys.length-1],col=last>=ys[0]?'var(--ok)':'var(--bad)';
+ const grid=[0,1,2,3].map(i=>{const v=a+(b-a)*i/3,y=Y(v);return`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--ln)"/><text x="${L-8}" y="${y+4}" text-anchor="end">${o.fmt(v)}</text>`}).join('');
+ const xl=[0,1,2,3].map(i=>{const t=x0+(x1-x0)*i/3,dt=new Date(t);return`<text x="${X(t)}" y="${H-6}" text-anchor="middle">${o.days===1?dt.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):dt.toLocaleDateString([],{month:'short',day:'numeric'})}</text>`}).join('');
+ const pts=d.map(p=>X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join(' '),bw=Math.max(1,(W-L-R)/d.length-1);
+ const body=o.bars?d.map(p=>`<rect x="${(X(p[0])-bw/2).toFixed(1)}" y="${Y(p[1]).toFixed(1)}" width="${bw.toFixed(1)}" height="${(H-B-Y(p[1])).toFixed(1)}" fill="var(--ac)" opacity=".75"/>`).join(''):`<defs><linearGradient id="${o.id}g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".35"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><polygon points="${L},${H-B} ${pts} ${W-R},${H-B}" fill="url(#${o.id}g)"/><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>`;
+ return{svg:`<svg viewBox="0 0 ${W} ${H}" id="${o.id}" role="img" aria-label="Chart" style="display:block;width:100%;height:auto"><g fill="var(--mu)" font-size="11">${grid}${xl}</g>${body}<line id="${o.id}-v" y1="${T}" y2="${H-B}" stroke="var(--mu)" opacity="0"/><circle id="${o.id}-c" r="4" fill="${col}" opacity="0"/></svg>`,g:{W,L,R,X,Y,xs,ys,x0,x1,fmt:o.fmt}}
+}
+// network stats for each kind of chain
+const NS={
+ async esplora(n){
+  const g=p=>es(n,p).catch(()=>null),[fee,mp,da,hr,tip]=await Promise.all([g('/v1/fees/recommended'),g('/mempool'),g('/v1/difficulty-adjustment'),g('/v1/mining/hashrate/1m'),g('/blocks/tip/height')]);
+  const iv=n.sym==='BTC'?210000:840000,left=typeof tip==='number'?iv-tip%iv:null,st=[];
+  if(typeof tip==='number')st.push(['Block height',tip.toLocaleString()]);
+  if(hr&&hr.currentHashrate)st.push(['Hashrate',hrate(hr.currentHashrate)],['Difficulty',big(hr.currentDifficulty)]);
+  if(da)st.push(['Next difficulty change',chg(da.difficultyChange)+' <span class="mu">in '+da.remainingBlocks+' blocks</span>'],['Epoch progress',da.progressPercent.toFixed(1)+'%']);
+  if(left!=null)st.push(['Next halving',left.toLocaleString()+' blocks <span class="mu">about '+new Date(Date.now()+left*(n.sym==='BTC'?600:150)*1000).toLocaleDateString(undefined,{year:'numeric',month:'short'})+'</span>']);
+  if(fee)st.push(['Fees (fast / 30 min / 1 hr)',fee.fastestFee+' / '+fee.halfHourFee+' / '+fee.hourFee+' sat/vB']);
+  if(mp)st.push(['Mempool',mp.count.toLocaleString()+' tx <span class="mu">'+(mp.vsize/1e6).toFixed(1)+' MvB</span>']);
+  if(!st.length)throw new Error('Network stats are not available right now.');
+  return{stats:st,chart:hr&&hr.hashrates&&hr.hashrates.length>1?{title:'Hashrate, last 30 days',pts:hr.hashrates.map(x=>[x.timestamp*1000,x.avgHashrate]),fmt:hrate}:null}
+ },
+ async evm(n){
+  const[s0,tc]=await Promise.all([bget(n,'/stats'),bget(n,'/stats/charts/transactions').catch(()=>null)]);
+  if(!s0)throw new Error('Network stats are not available right now.');
+  const st=[],N=(k,v)=>{if(v!=null&&v!=='')st.push([k,v])},L2=v=>v==null?null:Number(v).toLocaleString(),gp=s0.gas_prices&&s0.gas_prices.average;
+  N('Total blocks',L2(s0.total_blocks));N('Total transactions',L2(s0.total_transactions));N('Total addresses',L2(s0.total_addresses));
+  N('Average block time',s0.average_block_time!=null?(s0.average_block_time/1000).toFixed(2)+' s':null);N('Transactions today',L2(s0.transactions_today));
+  N('Gas price',gp!=null?num(gp)+' Gwei':null);N('Network utilisation',s0.network_utilization_percentage!=null?Number(s0.network_utilization_percentage).toFixed(1)+'%':null);
+  const cd=((tc&&tc.chart_data)||[]).map(x=>[Date.parse(x.date),Number(x.transactions_count??x.tx_count)]).filter(x=>x[0]&&x[1]>=0).sort((p,q)=>p[0]-q[0]);
+  return{stats:st,chart:cd.length>1?{title:'Transactions per day',pts:cd,fmt:big}:null}
+ },
+ async sol(n){
+  const[ps,ep,sp]=await Promise.all([rpc(n.rpc,'getRecentPerformanceSamples',[60]),rpc(n.rpc,'getEpochInfo',[]),rpc(n.rpc,'getSupply',[{excludeNonCirculatingAccountsList:true}]).catch(()=>null)]);
+  const tps=ps.map(x=>x.numTransactions/x.samplePeriodSecs),now=Date.now(),avg=tps.reduce((q,v)=>q+v,0)/(tps.length||1);
+  return{stats:[['Current TPS (with votes)',Math.round(tps[0]).toLocaleString()],['Average TPS, last hour',Math.round(avg).toLocaleString()],['Block height',ep.blockHeight.toLocaleString()],['Epoch',ep.epoch+' <span class="mu">'+(ep.slotIndex/ep.slotsInEpoch*100).toFixed(1)+'% done</span>'],['Total transactions',ep.transactionCount!=null?big(ep.transactionCount):'—'],...(sp&&sp.value?[['Circulating supply',big(sp.value.circulating/1e9)+' SOL'],['Total supply',big(sp.value.total/1e9)+' SOL']]:[])],chart:{title:'Transactions per second, last hour',pts:tps.map((v,i)=>[now-i*60000,v]).reverse(),fmt:v=>Math.round(v).toLocaleString(),days:1}}
+ },
+ async bsc(n){
+  const rows=await BLK.bsc(n),g=await rpc(n.rpc,'eth_gasPrice',[]).then(x=>hex(x)/1e9,()=>null);
+  if(!rows.length)throw new Error('Network stats are not available right now.');
+  const bt=rows.length>1?(rows[0][1]-rows[rows.length-1][1])/(rows.length-1)/1000:null,avg=rows.reduce((q,x)=>q+x[2],0)/rows.length;
+  return{stats:[['Latest block',rows[0][0].toLocaleString()],...(bt?[['Average block time',bt.toFixed(2)+' s']]:[]),['Average transactions per block',Math.round(avg).toLocaleString()],...(g!=null?[['Gas price',num(g)+' Gwei']]:[])],chart:{title:'Transactions per block, latest blocks',pts:rows.slice().reverse().map(x=>[x[1],x[2]]),fmt:v=>Math.round(v),days:1}}
+ }
+};
+function anHTML(n){
+ AN.coin=n.cg;AN.data=null;AN.g=null;
+ const seg=(a,fn)=>`<div class="seg">${a.map(fn).join('')}</div>`;
+ return`<div class="asrow">${seg(COINS(),c=>`<button data-an="${c.cg}"${c.cg===AN.coin?' class="on"':''}>${esc(c.sym)}</button>`)}${seg([1,7,30],d=>`<button data-d="${d}"${d===AN.days?' class="on"':''}>${d}D</button>`)}</div>
+<div class="stats" id="an-stats"><p class="note">Loading market data…</p></div>
+<div class="tcard" style="margin-top:16px"><div class="thead asrow"><span id="an-nm">Price</span>${seg([['prices','Price'],['market_caps','Market cap'],['total_volumes','Volume']],m=>`<button data-m="${m[0]}"${m[0]===AN.metric?' class="on"':''}>${m[1]}</button>`)}</div><div id="an-chart" style="padding:6px 10px"><p class="note" style="padding:20px">Loading chart…</p></div></div>
+<div class="two" style="margin-top:6px"><div><h3>Market stats</h3><div id="an-mk" class="kvg"></div></div><div><h3 id="an-nh">Network stats</h3><div id="an-net" class="kvg"><p class="note" style="padding:12px 0">Loading…</p></div><div id="an-nc"></div></div></div>
+<h3>All coins</h3><div id="an-tbl"></div>
+<p class="note">Updates every minute while this page is open. Times are in your timezone. <a href="https://www.coingecko.com/en/api" target="_blank" rel="noopener">Data provided by CoinGecko</a>, plus the network sources listed in the footer. Prices are estimates and not financial advice.</p>`
+}
+function anFill(){
+ const m=MKT&&MKT.find(x=>x.id===AN.coin),f=v=>v==null?'—':usd(v,v<1?4:2);if(!m||!$('an-stats'))return;
+ const sy=esc(m.symbol.toUpperCase()),st=(l,v,x='')=>`<div class="stat"><div class="l">${l}</div><div class="big">${v}</div>${x?`<div class="s">${x}</div>`:''}</div>`;
+ $('an-stats').innerHTML=st(sy+' PRICE',f(m.current_price),chg(m.price_change_percentage_24h_in_currency)+' <span class="mu">24h</span>')+st('MARKET CAP','$'+big(m.market_cap),'Rank #'+(m.market_cap_rank??'—'))+st('24H VOLUME','$'+big(m.total_volume))+st('CIRCULATING SUPPLY',big(m.circulating_supply)+' '+sy,m.max_supply?'Max '+big(m.max_supply):'')+st('FULLY DILUTED VALUE',m.fully_diluted_valuation?'$'+big(m.fully_diluted_valuation):'—');
+ const d=x=>x?new Date(x).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}):'';
+ $('an-mk').innerHTML=kv([['24h high / low',f(m.high_24h)+' / '+f(m.low_24h)],['All-time high',f(m.ath)+' <span class="mu">'+d(m.ath_date)+'</span>'],['From all-time high',chg(m.ath_change_percentage)],['All-time low',f(m.atl)+' <span class="mu">'+d(m.atl_date)+'</span>'],['Change 1h',chg(m.price_change_percentage_1h_in_currency)],['Change 24h',chg(m.price_change_percentage_24h_in_currency)],['Change 7d',chg(m.price_change_percentage_7d_in_currency)],['Change 30d',chg(m.price_change_percentage_30d_in_currency)],['Total supply',m.total_supply?big(m.total_supply):'—']]);
+ $('an-tbl').innerHTML=tbl(['#','Coin','>Price','>1h','>24h','>7d','>30d','>Market cap','>24h volume','7 days'],MKT.map(x=>`<tr data-an="${esc(x.id)}" class="${x.id===AN.coin?'sel':''}"><td>${x.market_cap_rank??'—'}</td><td><b>${esc(x.name)}</b> <span class="mu">${esc(x.symbol.toUpperCase())}</span></td><td class="n">${f(x.current_price)}</td><td class="n">${chg(x.price_change_percentage_1h_in_currency)}</td><td class="n">${chg(x.price_change_percentage_24h_in_currency)}</td><td class="n">${chg(x.price_change_percentage_7d_in_currency)}</td><td class="n">${chg(x.price_change_percentage_30d_in_currency)}</td><td class="n">$${big(x.market_cap)}</td><td class="n">$${big(x.total_volume)}</td><td>${x.sparkline_in_7d&&x.sparkline_in_7d.price?spark(x.sparkline_in_7d.price):''}</td></tr>`))
+}
+function anDraw(){
+ const D=AN.data;if(!D||!$('an-chart'))return;
+ const mt=AN.metric,d=D[mt],fmt=mt==='prices'?v=>usd(v,v<1?4:2):v=>'$'+big(v),r=chartSVG(d,{fmt,id:'an-svg',days:AN.days,bars:mt==='total_volumes'}),last=d[d.length-1][1],co=COINS().find(c=>c.cg===AN.coin);
+ $('an-chart').innerHTML=r.svg+'<div id="an-tip" class="antip"></div>';AN.g=r.g;
+ $('an-nm').innerHTML=`${esc((co&&co.sym)||'')} ${{prices:'price',market_caps:'market cap',total_volumes:'volume'}[mt]}: <b>${fmt(last)}</b> ${mt==='total_volumes'?'':chg((last/d[0][1]-1)*100)} <span class="mu">${AN.days}D</span>`
+}
+async function anLoad(quiet){
+ const id=++AN.req,c=AN.coin,dd=AN.days,n=COINS().find(x=>x.cg===c);
+ document.querySelectorAll('[data-an]').forEach(b=>b.classList.toggle('on',b.dataset.an===c));
+ document.querySelectorAll('[data-d]').forEach(b=>b.classList.toggle('on',+b.dataset.d===dd));
+ if(!$('an-chart')||!n)return;
+ const fail=(el,e)=>{if(!quiet&&id===AN.req&&$(el))$(el).innerHTML=`<p class="err" style="padding:12px 4px">${esc(e.message)}</p>`};
+ anMarkets().then(()=>{if(id===AN.req)anFill()},e=>fail('an-stats',e));
+ getJSON(cgURL(`/coins/${c}/market_chart?vs_currency=usd&days=${dd}`)).then(r=>{if(!r||!r.prices||!r.prices.length)throw new Error('No chart data came back. CoinGecko may be limiting this browser. Wait a minute, or add a CoinGecko API key in the footer.');if(id===AN.req){AN.data=r;anDraw()}}).catch(e=>fail('an-chart',e));
+ NS[n.type](n).then(r=>{if(id!==AN.req||!$('an-net'))return;$('an-nh').textContent=n.name+' network stats';$('an-net').innerHTML=kv(r.stats);$('an-nc').innerHTML=r.chart&&r.chart.pts.length>1?`<h3>${esc(r.chart.title)}</h3><div class="tcard" style="padding:6px 10px">${chartSVG(r.chart.pts,{fmt:r.chart.fmt||big,id:'an-svg2',days:r.chart.days||30,h:220}).svg}</div>`:''},e=>fail('an-net',e))
+}
+const TP={id:'eth',per:20,page:1,rows:[],abs:false,req:0,t:0};
+const IC={eye:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',cp:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>'};
+const cpb=v=>`<button class="ic" data-c="${esc(v)}" title="Copy" aria-label="Copy">${IC.cp}</button>`;
+const SEL={'0xa9059cbb':'transfer','0x095ea7b3':'approve','0x23b872dd':'transferFrom','0x38ed1739':'swapExactTokensForTokens','0x7ff36ab5':'swapExactETHForTokens','0x18cbafe5':'swapExactTokensForETH','0xd0e30db0':'deposit','0x2e1a7d4d':'withdraw','0x40c10f19':'mint','0x42842e0e':'safeTransferFrom','0xa22cb465':'setApprovalForAll','0x3593564c':'execute'};
+const PRG={'11111111111111111111111111111111':'System','TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA':'Token','TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb':'Token-2022','ComputeBudget111111111111111111111111111111':'Compute Budget','ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL':'Associated Token','MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr':'Memo','Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo':'Memo','JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4':'Jupiter','675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8':'Raydium','CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK':'Raydium CLMM','whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc':'Orca','6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P':'Pump.fun','LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo':'Meteora','Stake11111111111111111111111111111111111111':'Stake'};
+const hue=q=>[...q].reduce((a,c)=>(a*31+c.charCodeAt(0))%360,7);
+const fs=v=>{if(!v)return'0';if(v>=0.001)return Number(v.toFixed(6)).toString();const t=v.toFixed(12).slice(2),z=t.match(/^0*/)[0].length;return`0.0<sub>${z}</sub>${t.slice(z,z+4).replace(/0+$/,'')||'0'}`};
+function solRows(b,slot){
+ return b.transactions.filter(x=>!x.transaction.message.instructions.some(i=>i.programId==='Vote111111111111111111111111111111111111111')).map(x=>{
+  const m=x.transaction.message,ins=m.instructions,meta=x.meta||{},k0=m.accountKeys[0];
+  return{h:x.transaction.signatures[0],b:slot,t:b.blockTime*1000,err:!!meta.err,ins:ins.map(i=>(i.parsed&&i.parsed.type)||PRG[i.programId]||short(i.programId)),by:k0&&(k0.pubkey||k0),v:meta.preBalances?Math.abs(meta.postBalances[0]-meta.preBalances[0])/1e9:0,fee:(meta.fee||0)/1e9,prg:[...new Set(ins.map(i=>i.programId))]}
+ })
+}
+const TPB={
+ async rpc(n,id,need){
+  const top=hex(await rpc(n.rpc,'eth_blockNumber',[])),rows=[];let i=0;
+  while(rows.length<need&&i<40){
+   const k=Math.max(1,Math.min(4,Math.ceil((need-rows.length)/120)));
+   const bl=(await Promise.all(Array.from({length:k},(_,j)=>rpc(n.rpc,'eth_getBlockByNumber',['0x'+(top-i-j).toString(16),true]).catch(()=>null)))).filter(Boolean);
+   bl.forEach(b=>b.transactions.slice().reverse().forEach(t=>rows.push({h:t.hash,b:hex(b.number),t:hex(b.timestamp)*1000,from:t.from,to:t.to,v:units(hex(t.value),18),gp:hex(t.gasPrice)/1e9,mi:t.input})));
+   i+=k
+  }
+  if(!rows.length)throw new Error('No transactions came back from the public nodes. Try again in a moment.');
+  return rows
+ },
+ async bs(n,id,need){
+  const rows=[];let np=null;
+  for(let i=0;i<10&&rows.length<need;i++){
+   const r=await bget(n,'/transactions'+(np?'?'+new URLSearchParams(np).toString():''));
+   ((r&&r.items)||[]).forEach(t=>rows.push({h:t.hash,b:t.block_number??t.block,t:Date.parse(t.timestamp),from:t.from&&t.from.hash,to:t.to&&t.to.hash,v:units(t.value,18),gp:units(t.gas_price,9),m:t.method}));
+   np=r&&r.next_page_params;if(!np)break
+  }
+  if(!rows.length)throw new Error('No transactions came back from the explorer data source. Try again in a moment.');
+  return rows
+ },
+ async esplora(n,id,need){
+  const[bk,mp]=await Promise.all([es(n,'/blocks'),es(n,'/mempool/recent').catch(()=>[])]);
+  const rows=(mp||[]).map(t=>({h:t.txid,b:null,t:null,ni:'—',no:'—',v:t.value/1e8,fee:t.fee/1e8}));
+  for(const b of bk.slice(0,10)){
+   if(rows.length>=need)break;
+   const st=[];for(let q=0;q<Math.min(b.tx_count,need-rows.length+25);q+=25)st.push(q);
+   for(let i=0;i<st.length;i+=6){
+    const parts=await Promise.all(st.slice(i,i+6).map(q=>es(n,`/block/${b.id}/txs${q?'/'+q:''}`).catch(()=>[])));
+    parts.flat().forEach(t=>{if(t.vin&&t.vin[0]&&t.vin[0].is_coinbase)return;rows.push({h:t.txid,b:b.height,t:b.timestamp*1000,ni:t.vin.length,no:t.vout.length,v:t.vout.reduce((a,o)=>a+o.value,0)/1e8,fee:t.fee/1e8})})
+   }
+  }
+  return rows
+ },
+ async sol(n,id,need){
+  const slot=await rpc(n.rpc,'getSlot',[{commitment:'finalized'}]),list=(await rpc(n.rpc,'getBlocks',[slot-30,slot])).reverse(),rows=[];
+  for(const q of list.slice(0,3)){
+   if(rows.length>=need)break;
+   try{rows.push(...solRows(await rpc(n.rpc,'getBlock',[q,{encoding:'jsonParsed',transactionDetails:'full',rewards:false,maxSupportedTransactionVersion:0}]),q))}
+   catch(e){const b=await rpc(n.rpc,'getBlock',[q,{transactionDetails:'signatures',rewards:false,maxSupportedTransactionVersion:0}]).catch(()=>null);if(b)b.signatures.forEach(g=>rows.push({h:g,b:q,t:b.blockTime*1000}))}
+  }
+  if(!rows.length)throw new Error('No Solana transactions came back from the public nodes. Try again in a moment.');
+  return rows
+ }
+};
+function txpHTML(){
+ return`<div class="asrow"><h1 style="margin:0">Transactions</h1><div class="pills" style="margin:0">${Object.entries(NETS).map(([k,x])=>`<button class="pill" data-tn="${k}">${esc(x.name)}</button>`).join('')}</div></div>
+<div class="tcard" style="margin-top:14px"><div class="thead asrow"><span id="tp-sub">Loading…</span><span><button class="cp" data-tt>Time: ago or date</button> <button class="cp" data-tr>Refresh</button></span></div><div id="tp-body"></div><div class="pgr" id="tp-pg"></div></div>
+<p class="note">Shows the most recent transactions the free public data sources return, up to about 400. Vote transactions are hidden on Solana. Times are in your timezone.</p>`
+}
+function txpDraw(msg){
+ const id=TP.id,n=NETS[id],rows=TP.rows,pages=Math.max(1,Math.ceil(rows.length/TP.per));
+ TP.page=Math.min(Math.max(1,TP.page),pages);
+ document.querySelectorAll('[data-tn]').forEach(b=>b.classList.toggle('on',b.dataset.tn===id));
+ if(!$('tp-body'))return;
+ if(msg){$('tp-sub').textContent=n.name;$('tp-body').innerHTML='<p class="note" style="padding:20px">'+esc(msg)+'</p>';$('tp-pg').innerHTML='';return}
+ $('tp-sub').textContent=`${n.name} · latest ${rows.length.toLocaleString()} transactions · updated ${new Date(TP.t).toLocaleTimeString(undefined,{timeZoneName:'short'})}`;
+ const part=rows.slice((TP.page-1)*TP.per,TP.page*TP.per),sym=esc(n.sym),tm=x=>x.t==null?'Pending':TP.abs?new Date(x.t).toLocaleString(undefined,{timeZoneName:'short'}):ago(x.t);
+ const fh=x=>`<td><a class="eye" href="#/tx/${id}/${esc(x.h)}" title="Open transaction">${IC.eye}</a></td><td style="white-space:nowrap">${x.err?'<span class="bad" title="Failed">!</span> ':''}${T(id,x.h)}${cpb(x.h)}</td>`;
+ const ad=a=>a?A(id,a)+cpb(a):'—';
+ let head,fn;
+ if(n.type==='sol'){
+  head=['','Signature','Block','Time','Instructions','By','>Value (SOL)','>Fee (SOL)','Program'];
+  fn=x=>`<tr>${fh(x)}<td>${x.b}</td><td>${tm(x)}</td><td>${x.ins?`<span class="pillx">${esc(x.ins[0]||'—')}</span>${x.ins.length>1?`<span class="pillx m">${x.ins.length-1}+</span>`:''}`:'—'}</td><td>${ad(x.by)}</td><td class="n">${x.v==null?'—':fs(x.v)}</td><td class="n">${x.fee==null?'—':fs(x.fee)}</td><td style="white-space:nowrap">${(x.prg||[]).slice(0,3).map(q=>`<span class="prg" title="${esc(PRG[q]||q)}" style="background:hsl(${hue(q)} 55% 42%)">${esc((PRG[q]||q).slice(0,2).toUpperCase())}</span>`).join('')}${(x.prg||[]).length>3?`<span class="pillx m">+${x.prg.length-3}</span>`:''}</td></tr>`
+ }else if(n.type==='esplora'){
+  head=['','Transaction','Block','Time','Inputs / Outputs','>Value ('+n.sym+')','>Fee ('+n.sym+')'];
+  fn=x=>`<tr>${fh(x)}<td>${x.b==null?'Pending':esc(x.b)}</td><td>${tm(x)}</td><td>${x.ni==='—'?'—':x.ni+' in / '+x.no+' out'}</td><td class="n">${num(x.v)}</td><td class="n">${num(x.fee)}</td></tr>`
+ }else{
+  head=['','Transaction Hash','Block','Time','Method','From','To','>Value ('+n.sym+')','>Gas price (Gwei)'];
+  fn=x=>`<tr>${fh(x)}<td>${esc(x.b)}</td><td>${tm(x)}</td><td><span class="pillx">${esc(x.m?x.m[0].toUpperCase()+x.m.slice(1):(!x.mi||x.mi==='0x'?'Transfer':SEL[x.mi.slice(0,10)]||x.mi.slice(0,10)))}</span></td><td>${ad(x.from)}</td><td>${x.to?ad(x.to):'Contract creation'}</td><td class="n">${num(x.v)}</td><td class="n">${x.gp==null?'—':num(x.gp)}</td></tr>`
+ }
+ $('tp-body').innerHTML=tbl(head,part.map(fn));
+ $('tp-pg').innerHTML=`<span>Show <select id="tpr">${[10,20,30,40].map(k=>`<option${k===TP.per?' selected':''}>${k}</option>`).join('')}</select> per page</span><span class="pg"><button data-tp="first">«</button><button data-tp="prev">‹</button><span>Page ${TP.page} of ${pages}</span><button data-tp="next">›</button><button data-tp="last">»</button></span>`
+}
+async function txpLoad(quiet){
+ const id=TP.id,n=NETS[id],rq=++TP.req;
+ $('chain').value=id;
+ if(!quiet){TP.rows=[];txpDraw('Loading the latest transactions…')}
+ const pv=n.type==='sol'?'sol':n.type==='esplora'?'esplora':(n.rpc&&!n.slow)?'rpc':'bs';
+ try{
+  const rows=await TPB[pv](n,id,400).catch(e=>{if(pv==='rpc'&&n.type==='evm')return TPB.bs(n,id,400);throw e});
+  if(rq!==TP.req)return;
+  TP.rows=rows;TP.t=Date.now();txpDraw()
+ }catch(e){if(rq===TP.req&&!quiet&&$('tp-body'))$('tp-body').innerHTML=`<p class="err" style="padding:16px">${esc(e.message)}</p>`}
+}
+const SA={addr:'',sub:'o',range:7,sigs:null,tx:{},req:0};
+const rpcB=(urls,calls)=>first(urls,u=>getJSON(u,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(calls.map((c,i)=>({jsonrpc:'2.0',id:i,method:c[0],params:c[1]})))}));
+const dkey=t=>Math.floor((t-new Date(t).getTimezoneOffset()*6e4)/864e5);
+const dlbl=d=>new Date(d*864e5+new Date().getTimezoneOffset()*6e4).toLocaleDateString([],{month:'short',day:'numeric'});
+function solAnHTML(addr){
+ SA.addr=addr;SA.sub='o';SA.range=7;SA.sigs=null;SA.tx={};
+ return`<div class="asrow"><div class="seg"><button data-sa="o" class="on">Overview</button><button data-sa="h">Transfers Heatmap</button></div><div class="seg"><button data-sr="7" class="on">7D</button><button data-sr="30">1M</button><button data-sr="90">3M</button></div></div><div id="sa-body" style="margin-top:14px"><p class="note" style="padding:20px">Loading analytics…</p></div>`
+}
+async function saTx(list){
+ const need=list.filter(g=>!SA.tx[g.signature]).slice(0,150);
+ for(let i=0;i<need.length;i+=50){
+  const part=need.slice(i,i+50),res=await rpcB(NETS.sol.rpc,part.map(g=>['getTransaction',[g.signature,{encoding:'jsonParsed',maxSupportedTransactionVersion:0}]])).catch(()=>[]);
+  (Array.isArray(res)?res:[]).forEach(x=>{const t=x&&x.result,g=part[x.id];if(!t||!g||!t.meta)return;const ix=t.transaction.message.accountKeys.findIndex(k=>(k.pubkey||k)===SA.addr);if(ix<0)return;SA.tx[g.signature]={t:g.blockTime*1000,d:(t.meta.postBalances[ix]-t.meta.preBalances[ix])/1e9,post:t.meta.postBalances[ix]/1e9}})
+ }
+}
+function saBars(ds){
+ const W=900,H=300,L=64,R=12,B=26,T=12,ins=ds.map(x=>x.i),outs=ds.map(x=>x.o),net=ds.map(x=>x.i+x.o);
+ const hi=Math.max(0,...ins,...net)*1.1||1,lo=Math.min(0,...outs,...net)*1.1,Y=v=>H-B-(v-lo)/((hi-lo)||1)*(H-B-T),bw=(W-L-R)/ds.length,X=i=>L+bw*(i+.5),f=v=>usd(v,Math.abs(v)<1?3:2);
+ const grid=[0,1,2,3].map(k=>{const v=lo+(hi-lo)*k/3,y=Y(v);return`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--ln)" stroke-dasharray="3 4"/><text x="${L-8}" y="${y+4}" text-anchor="end">${f(v)}</text>`}).join('');
+ const step=Math.max(1,Math.ceil(ds.length/6)),xl=ds.map((x,i)=>i%step?'':`<text x="${X(i)}" y="${H-6}" text-anchor="middle">${dlbl(x.d)}</text>`).join('');
+ const bars=ds.map((x,i)=>`<rect x="${X(i)-bw*.3}" width="${bw*.6}" y="${Y(x.i)}" height="${Math.max(0,Y(0)-Y(x.i))}" fill="var(--ok)" opacity=".55"/><rect x="${X(i)-bw*.3}" width="${bw*.6}" y="${Y(0)}" height="${Math.max(0,Y(x.o)-Y(0))}" fill="#ff9f1c" opacity=".7"/>`).join('');
+ const line=`<polyline fill="none" stroke="#4c8dff" stroke-width="2" points="${net.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ')}"/>`+net.map((v,i)=>`<circle cx="${X(i)}" cy="${Y(v)}" r="3" fill="#4c8dff"/>`).join('');
+ return`<svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto"><g fill="var(--mu)" font-size="11">${grid}${xl}</g>${bars}${line}</svg>`
+}
+function saHeat(inr){
+ const g=Array.from({length:7},()=>Array(24).fill(0)),dn=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+ inr.forEach(x=>{const d=new Date(x.blockTime*1000);g[(d.getDay()+6)%7][d.getHours()]++});
+ const mx=Math.max(1,...g.flat());
+ return`<div class="tcard" style="padding:16px"><div class="thead" style="padding:0 0 12px">Transaction activity by day and hour <span class="mu">(your timezone, ${inr.length.toLocaleString()} transactions)</span></div><div class="heat">${g.map((row,i)=>`<span class="hl2">${dn[i]}</span>`+row.map((c,h)=>`<i title="${dn[i]} ${h}:00, ${c} transactions" style="background:color-mix(in srgb,var(--ac) ${c?Math.max(14,Math.round(c/mx*100)):0}%,var(--ln))"></i>`).join('')).join('')}<span></span>${Array.from({length:24},(_,h)=>`<span class="hl3">${h%6?'':h}</span>`).join('')}</div></div>`
+}
+function saOverview(all,inr,from,now){
+ const L=LAST,px=(PX.solana||{}).usd||(L&&L.nat&&L.nat.price)||0,full=all.length<1000,cur=L&&L.nat?L.nat.amt:0,plus=full?'':'+';
+ const oldest=all.length&&all[all.length-1].blockTime?all[all.length-1].blockTime*1000:null;
+ const dayset=[...new Set(all.filter(x=>x.blockTime).map(x=>dkey(x.blockTime*1000)))].sort((a,b)=>a-b);
+ let best=0,run=0;dayset.forEach((d,i)=>{run=i&&d-dayset[i-1]===1?run+1:1;if(run>best)best=run});
+ const det=inr.map(g=>SA.tx[g.signature]).filter(Boolean).sort((a,b)=>a.t-b.t),bal=det.map(x=>[x.t,x.post*px]);
+ bal.push([now,cur*px]);if(bal.length<2)bal.unshift([from,cur*px]);
+ const bk={};for(let d=dkey(from);d<=dkey(now);d++)bk[d]={i:0,o:0};
+ det.forEach(x=>{const b=bk[dkey(x.t)];if(b){if(x.d>0)b.i+=x.d*px;else b.o+=x.d*px}});
+ const ds=Object.keys(bk).map(Number).sort((a,b)=>a-b).map(d=>({d,...bk[d]})),cell=(l,v,x='')=>`<div class="sc"><div class="l">${l}</div><div class="big">${v}</div>${x?`<div class="s mu">${x}</div>`:''}</div>`;
+ const note=inr.length>150?'Charts use the 150 most recent transactions in this range.':(inr.length&&!det.length?'Balance details could not be loaded from the public node, so the charts only show your current balance.':'');
+ return`<div class="stat4">${cell('TRANSACTION COUNT',inr.length.toLocaleString()+((!full&&oldest&&oldest>from)?'':(inr.length&&!full?'+':'')))}${cell('ACTIVE AGE',oldest?Math.floor((now-oldest)/864e5).toLocaleString()+plus+' days':'—',oldest?'Since '+esc(new Date(oldest).toLocaleString([],{hour:'2-digit',minute:'2-digit',second:'2-digit',month:'short',day:'numeric',year:'numeric',timeZoneName:'short'})):'')}${cell('UNIQUE DAYS ACTIVE',dayset.length.toLocaleString()+plus+' days')}${cell('LONGEST STREAK',best+plus+' days')}</div>
+${note?`<p class="note">${note}</p>`:''}
+<div class="two" style="margin-top:14px"><div class="tcard"><div class="thead">Account USD Balance</div><div style="padding:0 10px 8px">${chartSVG(bal,{fmt:v=>usd(v,v<1?4:2),id:'sa-b',days:SA.range>7?30:7,h:300}).svg}</div></div>
+<div class="tcard"><div class="thead">Daily Value Transfer In/Out</div><div class="leg" style="padding:0 16px 4px"><span><u style="background:#ff9f1c"></u>Value Transfer Out ($)</span><span><u style="background:var(--ok)"></u>Value Transfer In ($)</span><span><u style="background:#4c8dff"></u>Net Value Transfer ($)</span></div><div style="padding:0 10px 8px">${saBars(ds)}</div></div></div>
+<p class="note">Based on the latest 1,000 transactions the public Solana nodes return. Dollar values use today's SOL price, not the price on the day. SOL only: token balances are not included.</p>`
+}
+async function solAnLoad(){
+ const id=++SA.req,addr=SA.addr,body=$('sa-body');if(!body||!addr)return;
+ document.querySelectorAll('[data-sa]').forEach(b=>b.classList.toggle('on',b.dataset.sa===SA.sub));
+ document.querySelectorAll('[data-sr]').forEach(b=>b.classList.toggle('on',+b.dataset.sr===SA.range));
+ try{
+  if(!SA.sigs){body.innerHTML='<p class="note" style="padding:20px">Loading analytics…</p>';SA.sigs=await rpc(NETS.sol.rpc,'getSignaturesForAddress',[addr,{limit:1000}])}
+  if(id!==SA.req)return;
+  const now=Date.now(),from=now-SA.range*864e5,all=SA.sigs,inr=all.filter(x=>x.blockTime&&x.blockTime*1000>=from);
+  if(SA.sub==='h'){body.innerHTML=saHeat(inr);return}
+  await saTx(inr);
+  if(id===SA.req)body.innerHTML=saOverview(all,inr,from,now)
+ }catch(e){if(id===SA.req)body.innerHTML=`<p class="err" style="padding:20px">${esc(e.message)}</p>`}
+}
+const SD={};
+const tkSym=m=>{const a=LAST&&LAST.held&&LAST.held.find(x=>x.addr===m);return a?a.sym:(SPL[m]?SPL[m][0]:short(m))};
+async function solDetail(addr,sigs){
+ const need=sigs.filter(g=>!SD[addr+g.signature]);
+ for(let i=0;i<need.length;i+=50){
+  const part=need.slice(i,i+50),res=await rpcB(NETS.sol.rpc,part.map(g=>['getTransaction',[g.signature,{encoding:'jsonParsed',maxSupportedTransactionVersion:0}]])).catch(()=>[]);
+  (Array.isArray(res)?res:[]).forEach(x=>{
+   const t=x&&x.result,g=part[x.id];if(!t||!g||!t.meta)return;
+   const m=t.transaction.message,ks=m.accountKeys,ix=ks.findIndex(k=>(k.pubkey||k)===addr),meta=t.meta,fee=meta.fee/1e9;if(ix<0)return;
+   const net=(meta.postBalances[ix]-meta.preBalances[ix])/1e9+(ix===0?fee:0);
+   let from=null,to=null;
+   for(const q of [...m.instructions,...((meta.innerInstructions||[]).flatMap(w=>w.instructions))]){const p=q.parsed;if(p&&p.type==='transfer'&&p.info&&p.info.lamports!=null&&(p.info.source===addr||p.info.destination===addr)){from=p.info.source;to=p.info.destination;break}}
+   const tk={};
+   [...(meta.preTokenBalances||[]).map(b=>[b,-1]),...(meta.postTokenBalances||[]).map(b=>[b,1])].forEach(([b,sg])=>{if(b.owner===addr)tk[b.mint]=(tk[b.mint]||0)+sg*(Number(b.uiTokenAmount.uiAmountString)||0)});
+   SD[addr+g.signature]={net,fee,from,to,tk:Object.entries(tk).filter(([,v])=>Math.abs(v)>1e-12),ins:m.instructions.map(q=>(q.parsed&&q.parsed.type)||PRG[q.programId]||short(q.programId)),prg:[...new Set(m.instructions.map(q=>q.programId))]}
+  })
+ }
+ return sigs.reduce((o,g)=>(o[g.signature]=SD[addr+g.signature],o),{})
+}
+async function addrEvm(n,id,addr){
+ TS={q:'',page:1,rows:10,sub:'m'};const[html,x]=await Promise.all([addrPage(n,id,addr),evmTabs(n,id,addr)]),top=await evmTop(n,id,addr);
+ const M='<div id="sp"></div>',i=html.indexOf('<h2>Assets held</h2>'),j=html.indexOf(M)+M.length;
+ return `<div class="${id==='hype'?'hl':''}">`+x.strip+top+x.tabs+`<section id="p-t">${x.tx}</section><section id="p-k" hidden>${x.tk}</section><section id="p-o" hidden>${x.it}</section><section id="p-a" hidden>${assetsHTML(n,id,addr)}</section></div>`
+}
+// Transaction loaders: each returns {kv: detail rows, extra: html}
+const TX={
+ async evm(n,id,h){
+  const t=await bget(n,'/transactions/'+h);if(!t)throw new Error('Transaction not found on '+n.name+'.');
+  const tt=await bget(n,`/transactions/${h}/token-transfers`),ts=Date.parse(t.timestamp),ok=t.status==='ok',tr=(tt&&tt.items)||[];
+  return{kv:[['Transaction hash',`<span class="mono">${esc(h)}</span>`],['Status',badge(ok,ok?'Success':'Failed')],['Block',esc(t.block_number??t.block??'—')],['Timestamp',esc(when(ts))+' ('+ago(ts)+')'],['From',A(id,t.from&&t.from.hash,1)],['To',t.to?A(id,t.to.hash,1):'Contract created: '+A(id,t.created_contract&&t.created_contract.hash,1)],['Value',fmt(units(t.value,18),n)],['Transaction fee',fmt(units(t.fee&&t.fee.value,18),n)],['Method',esc(t.method||'—')],['Confirmations',esc(t.confirmations??'—')]],
+  extra:tr.length?'<h2>Token transfers</h2>'+tbl(['From','To','>Amount'],tr.map(x=>`<tr><td>${A(id,x.from&&x.from.hash)}</td><td>${A(id,x.to&&x.to.hash)}</td><td class="n">${num(units(x.total&&x.total.value,x.total&&x.total.decimals))} ${esc(x.token&&x.token.symbol)}</td></tr>`)):''}
+ },
+ async esplora(n,id,h){
+  const t=await es(n,`/tx/${h.toLowerCase()}`);if(!t)throw new Error('Transaction not found on '+n.name+'.');
+  const c=t.status&&t.status.confirmed,ts=c?t.status.block_time*1000:null;
+  return{kv:[['Transaction hash',`<span class="mono">${esc(t.txid)}</span>`],['Status',badge(c,c?'Confirmed':'Pending')],['Block',c?esc(t.status.block_height):'—'],['Timestamp',c?esc(when(ts))+' ('+ago(ts)+')':'Pending'],['Fee',fmt(t.fee/1e8,n)],['Size',esc(t.size)+' bytes']],
+  extra:'<h2>Inputs</h2>'+tbl(['Address','>Amount'],t.vin.map(i=>`<tr><td>${i.prevout?A(id,i.prevout.scriptpubkey_address):'Coinbase (new coins)'}</td><td class="n">${i.prevout?num(i.prevout.value/1e8)+' '+n.sym:'—'}</td></tr>`))+'<h2>Outputs</h2>'+tbl(['Address','>Amount'],t.vout.map(o=>`<tr><td>${o.scriptpubkey_address?A(id,o.scriptpubkey_address):'Data output'}</td><td class="n">${num(o.value/1e8)} ${n.sym}</td></tr>`))}
+ },
+ async sol(n,id,h){
+  const t=await rpc(n.rpc,'getTransaction',[h,{encoding:'jsonParsed',maxSupportedTransactionVersion:0}]);if(!t)throw new Error('Transaction not found on Solana.');
+  const m=t.meta,keys=t.transaction.message.accountKeys,ts=t.blockTime?t.blockTime*1000:null,ch=keys.map((k,i)=>[k.pubkey,(m.postBalances[i]-m.preBalances[i])/1e9]).filter(x=>x[1]);
+  return{kv:[['Signature',`<span class="mono">${esc(h)}</span>`],['Status',badge(!m.err,m.err?'Failed':'Success')],['Slot',esc(t.slot)],['Timestamp',ts?esc(when(ts))+' ('+ago(ts)+')':'—'],['Signer',keys.filter(k=>k.signer).map(k=>A(id,k.pubkey,1)).join('<br>')],['Fee',fmt(m.fee/1e9,n)],['Instructions',esc(t.transaction.message.instructions.length)]],
+  extra:'<h2>SOL balance changes</h2>'+tbl(['Account','>Change'],ch.map(([a,d])=>`<tr><td>${A(id,a)}</td><td class="n ${d<0?'out':'in'}">${d>0?'+':''}${num(d)} SOL</td></tr>`))}
+ },
+ async bsc(n,id,h){
+  const[t,r]=await Promise.all([rpc(n.rpc,'eth_getTransactionByHash',[h]),rpc(n.rpc,'eth_getTransactionReceipt',[h])]);if(!t)throw new Error('Transaction not found on '+n.name+'.');
+  const b=t.blockNumber&&await rpc(n.rpc,'eth_getBlockByNumber',[t.blockNumber,false]),ts=b&&hex(b.timestamp)*1000,ok=r&&r.status==='0x1';
+  return{kv:[['Transaction hash',`<span class="mono">${esc(h)}</span>`],['Status',r?badge(ok,ok?'Success':'Failed'):badge(false,'Pending')],['Block',t.blockNumber?esc(hex(t.blockNumber)):'—'],['Timestamp',ts?esc(when(ts))+' ('+ago(ts)+')':'—'],['From',A(id,t.from,1)],['To',t.to?A(id,t.to,1):'Contract creation'],['Value',fmt(units(hex(t.value),18),n)],['Transaction fee',r?fmt(units(hex(r.gasUsed)*hex(r.effectiveGasPrice||t.gasPrice),18),n):'—']],extra:''}
+ }
+};
+const has=(k,h)=>{const n=NETS[k];return(n.type==='evm'?bget(n,'/transactions/'+h):rpc(n.rpc,'eth_getTransactionByHash',[h])).then(r=>!!r,()=>false)};
+async function txPage(n,id,h){
+ if(n.a===EVM&&T64.test(h)&&!await has(id,h)){
+  const hit=(await Promise.all(Object.keys(NETS).filter(k=>NETS[k].a===EVM&&k!==id).map(async k=>await has(k,h)?k:null))).find(Boolean);
+  if(hit){location.hash='#/tx/'+hit+'/'+h;return}
+ }
+ await prices();const r=await TX[n.type](n,id,h);return`<h1>Transaction on ${esc(n.name)}</h1><p class="note">${esc(short(h))}</p>${kvs(r.kv)}${r.extra}`}
+
+// Latest blocks: every network has a feed
+const BLK={
+ async bs(n){const r=await bget(n,'/blocks');return((r&&r.items)||[]).slice(0,10).map(b=>[b.height,Date.parse(b.timestamp),b.transactions_count??b.tx_count])},
+ async esplora(n){const r=await es(n,'/blocks');return r.slice(0,10).map(b=>[b.height,b.timestamp*1000,b.tx_count])},
+ async bsc(n){
+  const top=hex(await rpc(n.rpc,'eth_blockNumber',[]));
+  const blks=await Promise.all(Array.from({length:n.nb||10},(_,i)=>rpc(n.rpc,'eth_getBlockByNumber',['0x'+(top-i).toString(16),false]).catch(()=>null)));
+  return blks.filter(Boolean).map(b=>[hex(b.number),hex(b.timestamp)*1000,b.transactions.length])
+ },
+ async sol(n){
+  const slot=await rpc(n.rpc,'getSlot',[{commitment:'finalized'}]);
+  const list=(await rpc(n.rpc,'getBlocks',[slot-40,slot])).slice(-10).reverse();
+  const rows=(await Promise.all(list.map(x=>rpc(n.rpc,'getBlock',[x,{transactionDetails:'none',rewards:false,maxSupportedTransactionVersion:0}]).then(k=>k&&[x,k.blockTime*1000,short(k.blockhash)],()=>null)))).filter(Boolean);
+  rows.label='Blockhash';return rows
+ }
+};
+// Latest transactions: every network has a feed
+const TXF={
+ async bs(n,id){
+  const r=await bget(n,'/transactions');
+  return{head:['Transaction','Age','From','To','>Amount'],rows:((r&&r.items)||[]).slice(0,30).map(t=>`<tr><td>${T(id,t.hash)}</td><td>${ago(Date.parse(t.timestamp))}</td><td>${A(id,t.from&&t.from.hash)}</td><td>${t.to?A(id,t.to.hash):'Contract creation'}</td><td class="n">${num(units(t.value,18))} ${n.sym}</td></tr>`)}
+ },
+ async esplora(n,id){
+  // unconfirmed transactions first (live), then the newest confirmed block
+  const[bk,mp]=await Promise.all([es(n,'/blocks'),es(n,'/mempool/recent').catch(()=>[])]);
+  const tx=bk&&bk[0]?await es(n,`/block/${bk[0].id}/txs`):[];
+  const pend=(mp||[]).map(t=>`<tr><td>${T(id,t.txid)}</td><td><span class="meth">Unconfirmed</span></td><td class="n">${num(t.fee/1e8)} ${n.sym}</td><td class="n">${num(t.value/1e8)} ${n.sym}</td></tr>`);
+  const done=(tx||[]).slice(1,26).map(t=>`<tr><td>${T(id,t.txid)}</td><td>${ago(t.status.block_time*1000)}</td><td class="n">${num(t.fee/1e8)} ${n.sym}</td><td class="n">${num(t.vout.reduce((x,o)=>x+o.value,0)/1e8)} ${n.sym}</td></tr>`);
+  return{head:['Transaction','Age','>Fee','>Amount'],rows:[...pend,...done]}
+ },
+ async bsc(n,id){
+  const top=hex(await rpc(n.rpc,'eth_blockNumber',[]));
+  const bl=(await Promise.all([top,top-1].map(h=>rpc(n.rpc,'eth_getBlockByNumber',['0x'+h.toString(16),true]).catch(()=>null)))).filter(Boolean);
+  return{head:['Transaction','Age','From','To','>Amount'],rows:bl.flatMap(b=>b.transactions.slice().reverse().map(t=>[t,hex(b.timestamp)*1000])).slice(0,30).map(([t,ms])=>`<tr><td>${T(id,t.hash)}</td><td>${ago(ms)}</td><td>${A(id,t.from)}</td><td>${t.to?A(id,t.to):'Contract creation'}</td><td class="n">${num(units(hex(t.value),18))} ${n.sym}</td></tr>`)}
+ },
+ async sol(n,id){
+  const slot=await rpc(n.rpc,'getSlot',[{commitment:'finalized'}]),list=await rpc(n.rpc,'getBlocks',[slot-20,slot]);
+  const b=await rpc(n.rpc,'getBlock',[list[list.length-1],{transactionDetails:'signatures',rewards:false,maxSupportedTransactionVersion:0}]),ms=b.blockTime*1000;
+  return{head:['Signature','Age'],rows:b.signatures.slice(-30).reverse().map(g=>`<tr><td>${T(id,g)}</td><td>${ago(ms)}</td></tr>`)}
+ }
+};
+TXF.evm=(n,id)=>TXF.bsc(n,id).catch(()=>TXF.bs(n,id));
+BLK.evm=n=>BLK.bsc(n).catch(()=>BLK.bs(n));
+async function blocks(id,quiet){
+ const n=NETS[id];if(!$('bl'))return;
+ $('chain').value=id;
+ document.querySelectorAll('[data-n]').forEach(x=>x.classList.toggle('on',x.dataset.n===id));
+ const jobs=[['bl',async()=>{const r=await BLK[n.type](n);return{head:['Block','Age','>'+(r.label||'Transactions')],rows:r.map(k=>`<tr><td>${esc(k[0])}</td><td>${ago(k[1])}</td><td class="n">${esc(k[2]??'—')}</td></tr>`)}}],['tl',()=>TXF[n.type](n,id)]];
+ for(const[el,run]of jobs){
+  const box=$(el);if(!quiet)box.innerHTML='<p class="note">Loading…</p>';
+  run().then(x=>{if($('chain').value===id&&$(el)===box){box.innerHTML=tbl(x.head,x.rows);const u=$('lu');if(u)u.textContent='updated '+new Date().toLocaleTimeString(undefined,{timeZoneName:'short'})}},e=>{if(!quiet&&$('chain').value===id&&$(el)===box)box.innerHTML=`<p class="err">${esc(e.message)}</p>`})
+ }
+}
+async function home(){
+ const sel=$('chain').value;
+ $('app').innerHTML=`<section class="hero"><h1>Search every major blockchain in one place</h1><p class="sub">Look up any address or transaction on Bitcoin, Ethereum, Solana, BNB Chain, Litecoin, Polygon and Hyperliquid.</p></section><div class="cards" id="mk"></div><p class="note"><a href="https://www.coingecko.com/en/api" target="_blank" rel="noopener">Data provided by CoinGecko</a></p><h2>Latest blocks and transactions <span class="note" id="lu"></span></h2><div class="pills">${Object.entries(NETS).map(([id,x])=>`<button class="pill" data-n="${id}">${esc(x.name)}</button>`).join('')}</div><div class="two"><div><h3>Blocks</h3><div id="bl"></div></div><div><h3>Transactions <a class="note" href="#/txs">View all →</a></h3><div id="tl"></div></div></div>`;
+ const mk=$('mk'),draw=()=>{mk.innerHTML=Object.entries(NETS).map(([id,x])=>{const p=PX[x.cg],c=p&&p.usd_24h_change;return`<button class="card${id===$('chain').value?' on':''}" data-n="${id}"><span>${esc(x.name)}</span><b>${p?usd(p.usd,p.usd<1?4:2):'—'}</b><span class="${c<0?'dn':'up'}">${c==null?esc(x.sym):(c>0?'+':'')+c.toFixed(2)+'% 24h'}</span></button>`}).join('')};
+ draw();prices().then(draw);
+ blocks(sel)
+}
+
+async function route(){
+ const h=location.hash,[,k,id,q]=h.split('/'),app=$('app');app.classList.toggle('hl',k==='address'&&id==='sol');
+ if(k==='txs'){TP.id=NETS[id]?id:$('chain').value;TP.page=1;app.innerHTML=txpHTML();scrollTo(0,0);txpLoad()}else if(k==='analytics'){const c=COINS().find(x=>x.cg===id)||NETS[$('chain').value]||NETS.eth;app.innerHTML=`<h1>Analytics</h1><p class="sub">Live prices, charts, market stats and network stats for every coin CryptoScan covers.</p>${anHTML(c)}`;scrollTo(0,0);anLoad()}else if(k==='info'&&PAGES[id]){app.innerHTML=`<h1>${esc(PAGES[id][0])}</h1>${PAGES[id][1].split('\n\n').map(t=>t.startsWith('## ')?`<h2>${esc(t.slice(3))}</h2>`:`<p class="sub">${esc(t)}</p>`).join('')}`;scrollTo(0,0)}else if((k==='address'||k==='tx')&&NETS[id]&&q){
+  const v=decodeURIComponent(q);$('chain').value=id;$('q').value=v;app.innerHTML='<p class="note">Loading…</p>';
+  try{const html=await(k==='tx'?txPage:NETS[id].type==='evm'?addrEvm:addrAny)(NETS[id],id,v);if(html&&location.hash===h){app.innerHTML=html;if($('tk-body'))drawTok();if(k==='address'&&NETS[id].a===EVM)spread(id,v).then(s=>{if($('sp')&&location.hash===h)$('sp').innerHTML=s})}}
+  catch(e){if(location.hash===h)app.innerHTML=`<p class="err">${esc(e.message)}</p>`}
+ }else home()
+}
+$('f').onsubmit=e=>{e.preventDefault();const q=$('q').value.trim(),d=detect(q,$('chain').value);
+ if(!d){$('app').innerHTML='<p class="err">That is not a valid address or transaction hash on a supported network. Check it and try again.</p>';return}
+ location.hash=`#/${d[1]}/${d[0]}/${q}`};
+$('chain').onchange=()=>{if(!/^#\/(address|tx)\//.test(location.hash))home()};
+$('app').onclick=e=>{const b=e.target.closest('[data-n],[data-t],[data-c],[data-tag],[data-csv],[data-pg],[data-s],[data-mc],[data-an],[data-d],[data-m],[data-tp],[data-tn],[data-tt],[data-tr],[data-sa],[data-sr]');if(!b)return;const d=b.dataset;
+ if(d.sa){SA.sub=d.sa;solAnLoad()}else if(d.sr){SA.range=+d.sr;solAnLoad()}else if(d.tp){TP.page=d.tp==='first'?1:d.tp==='prev'?TP.page-1:d.tp==='next'?TP.page+1:1e9;txpDraw()}else if(d.tn){TP.id=d.tn;TP.page=1;history.replaceState(null,'','#/txs/'+d.tn);txpLoad()}else if(d.tt!==undefined){TP.abs=!TP.abs;txpDraw()}else if(d.tr!==undefined){txpLoad()}else if(d.m){AN.metric=d.m;document.querySelectorAll('[data-m]').forEach(x=>x.classList.toggle('on',x===b));anDraw()}else if(d.an){AN.coin=d.an;if(/^#\/analytics/.test(location.hash))history.replaceState(null,'','#/analytics/'+d.an);anLoad()}else if(d.d){AN.days=+d.d;anLoad()}else if(d.pg){TS.page=d.pg==='first'?1:d.pg==='prev'?TS.page-1:d.pg==='next'?TS.page+1:1e9;drawTok()}else if(d.s){TS.sub=d.s;document.querySelectorAll('[data-s]').forEach(x=>x.classList.toggle('on',x===b));$('as-sum').hidden=d.s!=='m';$('as-tok').hidden=d.s==='f';$('as-nft').hidden=d.s!=='f'}else if(d.mc!==undefined){$('as-chains').classList.toggle('all')}else if(d.csv!==undefined){const rows=[...document.querySelectorAll('#p-t tr')].map(x=>[...x.cells].map(c=>{const a=c.querySelector('[title]');return'"'+((a?a.title:c.textContent.trim())||'').replace(/"/g,'""')+'"'}).join(',')).join('\n'),l=document.createElement('a');l.href=URL.createObjectURL(new Blob([rows],{type:'text/csv'}));l.download='transactions.csv';l.click()}else if(d.tag){const v=prompt('Name tag for this address (saved only in this browser):',b.textContent==='+ Add'?'':b.textContent);if(v!==null){const t=v.trim();try{t?localStorage.setItem('tag:'+d.tag,t):localStorage.removeItem('tag:'+d.tag)}catch(e){}b.textContent=t||'+ Add'}}else if(d.n)blocks(d.n)
+ else if(d.t){document.querySelectorAll('[data-t]').forEach(x=>x.classList.toggle('on',x===b));['t','k','o','r','n','a'].forEach(q=>{const e=$('p-'+q);if(e)e.hidden=q!==d.t});if(d.t==='n')solAnLoad()}
+ else if(navigator.clipboard)navigator.clipboard.writeText(d.c).then(()=>b.classList.contains('ic')?b.classList.add('ok'):b.textContent='Copied')};
+$('app').onmousemove=e=>{const s=e.target.closest('#an-svg');if(!s||!AN.g)return;const q=s.getBoundingClientRect(),g=AN.g,t=g.x0+((e.clientX-q.left)/q.width*g.W-g.L)/(g.W-g.L-g.R)*(g.x1-g.x0);let i=0,bd=1e18;g.xs.forEach((x,k)=>{const dd=Math.abs(x-t);if(dd<bd){bd=dd;i=k}});const px=g.X(g.xs[i]),py=g.Y(g.ys[i]),v=$('an-svg-v'),c=$('an-svg-c'),tp=$('an-tip');v.setAttribute('x1',px);v.setAttribute('x2',px);v.setAttribute('opacity',.5);c.setAttribute('cx',px);c.setAttribute('cy',py);c.setAttribute('opacity',1);tp.style.display='block';tp.style.left=Math.min(Math.max(px/g.W*q.width-80,4),q.width-190)+'px';tp.textContent=new Date(g.xs[i]).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'})+'  ·  '+g.fmt(g.ys[i])};
+$('app').oninput=e=>{if(e.target.id==='tq'){TS.q=e.target.value;TS.page=1;drawTok()}};
+$('app').onchange=e=>{if(e.target.id==='tpr'){TP.per=+e.target.value;TP.page=1;txpDraw()}if(e.target.id==='rw'){TS.rows=+e.target.value;TS.page=1;drawTok()}};
+$('chain').innerHTML=Object.entries(NETS).map(([id,n])=>`<option value="${id}">${n.name}</option>`).join('');
+const SOON='This page is coming soon.';
+const PAGES={about:['About Us','CryptoScan is a free, read-only explorer for Bitcoin, Ethereum, Solana, BNB Chain, Litecoin, Polygon and Hyperliquid. Paste an address or transaction hash to see balances, tokens and activity. It never asks you to connect a wallet.'],branding:['Branding',SOON],contact:['Contact Us',SOON],terms:['Terms of Service','Last updated: 30 October 2026. This is a plain-language draft. Have a lawyer review it, and fill in the [square brackets], before you rely on it.\n\n## About CryptoScan\nCryptoScan is a free, read-only tool for looking up public blockchain data such as balances, transactions and token prices. It is run by [your name or business name and ABN].\n\n## No advice\nEverything on CryptoScan is general information only. It is not financial, investment, tax, legal or accounting advice and it does not take your goals or circumstances into account. Talk to a licensed professional before you make a decision.\n\n## Accuracy and availability\nBlockchain data and prices come from third parties and may be delayed, incomplete or wrong. CryptoScan is provided as is and may be unavailable at times. Do not rely on it for time-sensitive or high-value decisions.\n\n## No custody\nCryptoScan never holds funds, never asks for private keys or seed phrases and cannot move assets. Anyone who asks you for these in the name of CryptoScan is a scammer.\n\n## Your use\nUse CryptoScan lawfully. Do not scrape it at a rate that harms the service, try to break it, or use it to harass or track people.\n\n## Third parties, ads and links\nCryptoScan uses data from third parties and links to other sites. We do not control them and are not responsible for their content or terms. Ads and sponsored content are labelled and do not mean we endorse the advertiser.\n\n## Donations\nDonations are voluntary gifts. They are not payment for goods or services, they are not refundable, and they are not tax deductible. We do not promise any return or benefit.\n\n## Liability\nTo the extent the law allows, we are not liable for any loss that comes from using or relying on CryptoScan. Nothing in these terms removes a right you have under the Australian Consumer Law or any other law that cannot be excluded.\n\n## Changes and law\nWe may change these terms by updating this page. These terms are governed by the laws of [your state or territory], Australia.\n\n## Contact\nSee the Contact Us page.'],disclaimer:['Disclaimer','CryptoScan shows public blockchain data and market prices for information only. It is not financial, investment, tax or legal advice, and it is not an offer or a recommendation to buy, sell or hold any asset.\n\nPrices come from third parties such as CoinGecko and DexScreener. They are estimates, can be delayed or wrong, and thinly traded tokens can show misleading prices. Tokens without a market price are often spam or scams, so do not interact with or approve them.\n\nDigital assets are volatile and you can lose everything you put in. Do your own research and talk to a licensed adviser before you decide anything.\n\nPrice data is provided by CoinGecko. CryptoScan is not affiliated with or endorsed by any data provider or by any other block explorer.'],privacy:['Privacy Policy','Last updated: 30 October 2026. This is a plain-language draft. Have a lawyer review it before you rely on it.\n\n## What CryptoScan collects\nCryptoScan has no accounts and does not ask for your name, email or wallet connection. The site does not set cookies and does not keep a server-side record of what you search.\n\n## What stays in your browser\nName tags you add are saved in your browser only, on your device. API keys you type into the footer boxes stay in the page and are not saved or sent to us.\n\n## What third parties see\nWhen you load a page or search, your browser contacts third-party data services directly. They receive your IP address, your browser details and what you looked up, for example an address, a transaction hash or a coin. These services include CoinGecko (prices), DexScreener (token prices), Blockscout and similar explorers (Ethereum, Polygon and Hyperliquid data), mempool.space and Litecoin Space (Bitcoin and Litecoin), and public nodes (Solana, BNB Chain, Ethereum, Polygon and Hyperliquid). Each has its own privacy policy and we do not control them.\n\n## Ads\nIf ads are shown, the advertiser or ad network may use cookies or similar technology under its own policy. Ads are labelled.\n\n## Public blockchain data\nBlockchain addresses and transactions are public. CryptoScan only shows data that is already public and does not link addresses to real-world identities.\n\n## Your choices and contact\nYou can remove saved name tags by clearing your browser data. For privacy questions see the Contact Us page. If you are in Australia and think personal information has been mishandled, you can complain to the Office of the Australian Information Commissioner.'],bounty:['Bug Bounty',SOON],community:['Community',SOON],apidocs:['API Docs',SOON],docs:['CryptoScan Docs',SOON],kb:['Knowledge Base',SOON],advertise:['Advertise',SOON],eaas:['Explorer as a Service (EaaS)',SOON],plans:['API Plans',SOON],support:['Priority Support',SOON],token:['Token Update',SOON]};
+const FOOT=[['Company',['about','branding','contact','terms','privacy','disclaimer','bounty','community']],['Resources',['apidocs','docs','kb']],['Products & Services',['advertise','eaas','plans','support','token']]];
+$('cols').innerHTML=FOOT.map(([t,ks])=>`<div><h3>${esc(t)}</h3>${ks.map(k=>`<a href="#/info/${k}">${esc(PAGES[k][0])}</a>`).join('')}</div>`).join('');
+const DONATE=''; // paste your donation wallet address between the quotes
+$('cr').textContent='© '+new Date().getFullYear()+' CryptoScan';
+$('don').innerHTML=DONATE?`Donations: <span class="mono" title="${esc(DONATE)}">${esc(DONATE.slice(0,6)+'…'+DONATE.slice(-6))}</span><button class="cp" data-c="${esc(DONATE)}">Copy</button>`:'Donations: address coming soon';
+document.querySelector('footer').onclick=e=>{const b=e.target.closest('[data-top],[data-c]');if(!b)return;if(b.dataset.c===undefined)scrollTo({top:0,behavior:'smooth'});else if(navigator.clipboard)navigator.clipboard.writeText(b.dataset.c).then(()=>b.textContent='Copied')};
+setInterval(()=>{if(!document.hidden&&$('bl'))blocks($('chain').value,1)},15e3); // blocks and transactions refresh quietly every 15 seconds
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&$('bl'))blocks($('chain').value,1)});
+// Refresh prices every 30 minutes (and when you return to a stale tab), then redraw the page with the new values.
+const refresh=async()=>{PXT=0;await prices();if(document.activeElement!==$('q'))route()};
+setInterval(refresh,PX_MS);
+setInterval(()=>{if(!document.hidden&&$('tp-body')&&TP.page===1)txpLoad(1)},3e4); // transactions page refreshes quietly while you are on page 1
+setInterval(()=>{if(!document.hidden&&$('an-chart')&&(!$('p-n')||!$('p-n').hidden))anLoad(1)},6e4); // live chart refresh every minute
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-PXT>PX_MS)refresh()});
+addEventListener('hashchange',route);
+route();
+</script>
+</body>
+</html>
