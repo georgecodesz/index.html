@@ -21,6 +21,33 @@ Config.MaxStrengthBonus = 2 -- capped at +200%
 Config.WorkoutCooldown = 0.6
 
 ---------------------------------------------------------------------
+-- Rebirths
+-- Once you own the RequiredItem and have enough cash you can rebirth:
+-- your gym + cash reset, but you keep a permanent income multiplier.
+-- Strength and gamepasses are kept.
+---------------------------------------------------------------------
+Config.Rebirth = {
+	RequiredItem = "BoxingRing",
+	BaseCost = 100000, -- cash needed for the 1st rebirth
+	CostMultiplier = 2, -- each rebirth needs 2x more
+	IncomeBonus = 0.5, -- +50% income per rebirth (permanent)
+}
+
+---------------------------------------------------------------------
+-- Gamepasses
+-- 1. Create each pass on create.roblox.com > your experience > Monetization > Passes
+-- 2. Paste its ID below (0 = not set up yet; it shows as "coming soon" in the shop)
+---------------------------------------------------------------------
+Config.GamePasses = {
+	DoubleCash = { Order = 1, Id = 0, Icon = "💰", Name = "2x Cash", Description = "Double money from every customer, forever." },
+	AutoCollect = { Order = 2, Id = 0, Icon = "🧾", Name = "Auto Collect", Description = "Customer cash goes straight into your wallet." },
+	VIPGym = { Order = 3, Id = 0, Icon = "⭐", Name = "VIP Gym", Description = "+50% customer arrivals and +5 max customers." },
+	SuperStrength = { Order = 4, Id = 0, Icon = "💪", Name = "Super Strength", Description = "2x Strength from every workout." },
+}
+-- Set true to get every pass for free while testing in Studio
+Config.GiveAllPassesInStudio = false
+
+---------------------------------------------------------------------
 -- Customers
 ---------------------------------------------------------------------
 Config.Customer = {
@@ -111,6 +138,15 @@ Config.Items = {
 	{ Id = "Sauna", Name = "Sauna", Kind = "Station", Model = "Sauna", Price = 28000, Position = v(-20, -32), Requires = "SmoothieBar", Rating = 5, Pay = 90, Duration = 10, Strength = 1 },
 	{ Id = "Membership3", Name = "VIP Memberships", Kind = "Upgrade", Price = 40000, Position = v(-19, 33), Requires = { "Membership2", "Sauna" }, Effect = { Type = "IncomeMult", Value = 1 }, Description = "+100% income" },
 	{ Id = "BoxingRing", Name = "Boxing Ring", Kind = "Station", Model = "BoxingRing", Price = 60000, Position = v(3, -32), Requires = "Sauna", Rating = 8, Pay = 150, Duration = 9, Strength = 6 },
+
+	-- Staff (Kind = "Staff"): hired NPCs that walk around your gym and give a bonus
+	{ Id = "Receptionist", Name = "Receptionist", Kind = "Staff", Role = "Receptionist", Price = 1500, Position = v(16, 41), Requires = "Membership1", Rating = 2, Effect = { Type = "EntryFee", Value = 1 }, Description = "2x check-in fees" },
+	{ Id = "Trainer1", Name = "Personal Trainer", Kind = "Staff", Role = "Trainer", Price = 2500, Position = v(23, 41), Requires = "SquatRack1", Rating = 2, Effect = { Type = "IncomeMult", Value = 0.2 }, Description = "+20% income" },
+	{ Id = "Janitor", Name = "Janitor", Kind = "Staff", Role = "Janitor", Price = 3500, Position = v(29, 41), Requires = "RubberFloor", Rating = 6, Description = "+6 rating (clean gym!)" },
+	{ Id = "Trainer2", Name = "Personal Trainer #2", Kind = "Staff", Role = "Trainer", Price = 9000, Position = v(16, 34), Requires = { "Trainer1", "Bench2" }, Rating = 2, Effect = { Type = "IncomeMult", Value = 0.25 }, Description = "+25% income" },
+	{ Id = "DJ", Name = "Gym DJ", Kind = "Staff", Role = "DJ", Model = "DJBooth", Price = 12000, Position = v(-9, -40), ButtonPosition = v(23, 34), Requires = "Speakers", Rating = 3, Effect = { Type = "SpawnRate", Value = 0.4 }, Description = "+40% customer arrivals" },
+	{ Id = "Manager", Name = "Gym Manager", Kind = "Staff", Role = "Manager", Price = 25000, Position = v(29, 34), Requires = "SmoothieBar", Rating = 3, Effect = { Type = "ExtraVisits", Value = 1 }, Description = "Customers use +1 machine" },
+	{ Id = "Trainer3", Name = "Head Coach", Kind = "Staff", Role = "Trainer", Price = 45000, Position = v(16, 27), Requires = { "Trainer2", "Sauna" }, Rating = 3, Effect = { Type = "IncomeMult", Value = 0.35 }, Description = "+35% income" },
 }
 
 Config.ItemsById = {}
@@ -141,6 +177,14 @@ function Config.FormatNumber(n: number): string
 		s = s:sub(2)
 	end
 	return sign .. s
+end
+
+function Config.GetRebirthCost(rebirths: number): number
+	return math.floor(Config.Rebirth.BaseCost * Config.Rebirth.CostMultiplier ^ (rebirths or 0))
+end
+
+function Config.GetRebirthMultiplier(rebirths: number): number
+	return 1 + (rebirths or 0) * Config.Rebirth.IncomeBonus
 end
 
 return Config

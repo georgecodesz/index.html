@@ -31,6 +31,7 @@ local function defaultData()
 	return {
 		Cash = Config.StartingCash,
 		Strength = 0,
+		Rebirths = 0,
 		TotalEarned = 0,
 		Owned = {}, -- set: [itemId] = true
 	}
@@ -62,6 +63,7 @@ function DataService.Load(player)
 			if type(result) == "table" then
 				data.Cash = tonumber(result.Cash) or data.Cash
 				data.Strength = tonumber(result.Strength) or 0
+				data.Rebirths = tonumber(result.Rebirths) or 0
 				data.TotalEarned = tonumber(result.TotalEarned) or 0
 				if type(result.Owned) == "table" then
 					for _, id in result.Owned do
@@ -90,6 +92,10 @@ function DataService.Load(player)
 	strength.Name = "Strength"
 	strength.Value = math.floor(data.Strength)
 	strength.Parent = leaderstats
+	local rebirths = Instance.new("IntValue")
+	rebirths.Name = "Rebirths"
+	rebirths.Value = math.floor(data.Rebirths)
+	rebirths.Parent = leaderstats
 	leaderstats.Parent = player
 
 	return data
@@ -122,6 +128,24 @@ function DataService.SpendCash(player, amount)
 	return true
 end
 
+function DataService.SetCash(player, amount)
+	local data = DataService.Get(player)
+	if not data then
+		return
+	end
+	data.Cash = amount
+	setStat(player, "Cash", data.Cash)
+end
+
+function DataService.AddRebirth(player)
+	local data = DataService.Get(player)
+	if not data then
+		return
+	end
+	data.Rebirths += 1
+	setStat(player, "Rebirths", data.Rebirths)
+end
+
 function DataService.AddStrength(player, amount)
 	local data = DataService.Get(player)
 	if not data then
@@ -145,6 +169,7 @@ function DataService.Save(player)
 		Version = 1,
 		Cash = math.floor(data.Cash),
 		Strength = math.floor(data.Strength),
+		Rebirths = math.floor(data.Rebirths),
 		TotalEarned = math.floor(data.TotalEarned),
 		Owned = owned,
 	}

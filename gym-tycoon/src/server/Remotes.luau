@@ -1,6 +1,8 @@
 --!nonstrict
 -- Remotes (ModuleScript, child of GymServer)
--- Creates ReplicatedStorage.GymRemotes so the HUD can show popup messages.
+-- Creates ReplicatedStorage.GymRemotes:
+--   Notify          server -> client popup messages
+--   RequestRebirth  client -> server when the Rebirth button is pressed
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -13,12 +15,18 @@ if not folder then
 	folder.Parent = ReplicatedStorage
 end
 
-local notify = folder:FindFirstChild("Notify")
-if not notify then
-	notify = Instance.new("RemoteEvent")
-	notify.Name = "Notify"
-	notify.Parent = folder
+local function getRemote(name)
+	local remote = folder:FindFirstChild(name)
+	if not remote then
+		remote = Instance.new("RemoteEvent")
+		remote.Name = name
+		remote.Parent = folder
+	end
+	return remote
 end
+
+local notify = getRemote("Notify")
+Remotes.RequestRebirth = getRemote("RequestRebirth")
 
 function Remotes.Notify(player, text, color)
 	if player and player.Parent then

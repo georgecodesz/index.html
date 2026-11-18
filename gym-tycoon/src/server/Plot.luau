@@ -12,11 +12,17 @@ local Builder = require(script.Parent.Builder)
 local DataService = require(script.Parent.DataService)
 local Remotes = require(script.Parent.Remotes)
 local Customer = require(script.Parent.Customer)
+local Staff = require(script.Parent.Staff)
+local GamePasses = require(script.Parent.GamePasses)
 
 local GREEN = Color3.fromRGB(46, 204, 113)
 local RED = Color3.fromRGB(231, 76, 60)
 local GOLD = Color3.fromRGB(255, 200, 40)
-local KIND_ICON = { Station = "🏋️", Decor = "🎨", Upgrade = "⬆️" }
+local KIND_ICON = { Station = "🏋️", Decor = "🎨", Upgrade = "⬆️", Staff = "🧑‍💼" }
+
+local function defaultStats()
+	return { Rating = 0, Income = 1, Spawn = 1, Capacity = 0, AutoCollect = false, EntryFee = 1, ExtraVisits = 0 }
+end
 
 local workoutCooldowns = {}
 Players.PlayerRemoving:Connect(function(player)
@@ -85,12 +91,13 @@ function Plot.new(index: number, origin: CFrame, parent: Instance)
 	self.Register = 0
 	self.ActiveCustomers = 0
 	self.Generation = 0
-	self.Stats = { Rating = 0, Income = 1, Spawn = 1, Capacity = 0, AutoCollect = false }
+	self.Stats = defaultStats()
 
 	self.Folder = newFolder("Gym" .. index, parent)
 	self.ItemsFolder = newFolder("Items", self.Folder)
 	self.ButtonsFolder = newFolder("Buttons", self.Folder)
 	self.CustomersFolder = newFolder("Customers", self.Folder)
+	self.StaffFolder = newFolder("Staff", self.Folder)
 	self.EffectsFolder = newFolder("Effects", self.Folder)
 
 	self.EntrancePoint = self:ToWorld(Config.Layout.Entrance)
@@ -245,6 +252,7 @@ function Plot:Release()
 	self.ItemsFolder:ClearAllChildren()
 	self.ButtonsFolder:ClearAllChildren()
 	self.CustomersFolder:ClearAllChildren()
+	self.StaffFolder:ClearAllChildren()
 	self.EffectsFolder:ClearAllChildren()
 	self:_recalculate()
 	self:_setSign("🏋️ Unclaimed Gym")
@@ -370,24 +378,25 @@ end
 -- Building items / stations
 ---------------------------------------------------------------------
 function Plot:_buildItem(item, animate)
-	if item.Kind == "Upgrade" or not item.Model then
-		return
+	if item.Model then
+		local origin = self.Origin * CFrame.new(item.Position) * CFrame.Angles(0, math.rad(item.Rotation or 0), 0)
+		local model, info = Builder.Build(item.Model, origin, {
+			PlotSize = Config.PlotSize,
+			OwnerName = self.Owner and self.Owner.DisplayName or "My",
+		})
+		if model then
+			model.Name = item.Id
+			model.Parent = self.ItemsFolder
+			if animate then
+				popIn(model)
+			end
+			if item.Kind == "Station" and info then
+				self:_addStation(item, model, origin, info)
+			end
+		end
 	end
-	local origin = self.Origin * CFrame.new(item.Position) * CFrame.Angles(0, math.rad(item.Rotation or 0), 0)
-	local model, info = Builder.Build(item.Model, origin, {
-		PlotSize = Config.PlotSize,
-		OwnerName = self.Owner and self.Owner.DisplayName or "My",
-	})
-	if not model then
-		return
-	end
-	model.Name = item.Id
-	model.Parent = self.ItemsFolder
-	if animate then
-		popIn(model)
-	end
-	if item.Kind == "Station" and info then
-		self:_addStation(item, model, origin, info)
+	if item.Kind == "Staff" then
+		Staff.Spawn(self, item)
 	end
 end
 
@@ -447,6 +456,9 @@ function Plot:_playerWorkout(player, station)
 	end
 	workoutCooldowns[player] = now + Config.WorkoutCooldown
 	local gain = station.Item.Strength or 1
+	if GamePasses.Has(player, "SuperStrength") then
+		gain *= 2
+	end
 	DataService.AddStrength(player, gain)
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	if root then
@@ -481,7 +493,7 @@ end
 -- Stats & money
 ---------------------------------------------------------------------
 function Plot:_recalculate()
-	local stats = { Rating = 0, Income = 1, Spawn = 1, Capacity = 0, AutoCollect = false }
+	local stats = defaultStats()
 	for id in self.Owned do
 		local item = Config.ItemsById[id]
 		if item then
@@ -496,10 +508,25 @@ function Plot:_recalculate()
 					stats.Capacity += effect.Value
 				elseif effect.Type == "AutoCollect" then
 					stats.AutoCollect = true
+				elseif effect.Type == "EntryFee" then
+					stats.EntryFee += effect.Value
+				elseif effect.Type == "ExtraVisits" then
+					stats.ExtraVisits += effect.Value
 				end
 			end
 		end
 	end
+
+	-- Gamepasses
+	local owner = self.Owner
+	if GamePasses.Has(owner, "AutoCollect") then
+		stats.AutoCollect = true
+	end
+	if GamePasses.Has(owner, "VIPGym") then
+		stats.Spawn *= 1.5
+		stats.Capacity += 5
+	end
+
 	self.Stats = stats
 	if stats.AutoCollect and self.Register > 0 then
 		self:Collect()
@@ -510,7 +537,9 @@ end
 function Plot:GetIncomeMultiplier()
 	local strength = self.Data and self.Data.Strength or 0
 	local bonus = math.min(strength * Config.StrengthIncomeBonus, Config.MaxStrengthBonus)
-	return self.Stats.Income * (1 + bonus)
+	local rebirths = self.Data and self.Data.Rebirths or 0
+	local pass = GamePasses.Has(self.Owner, "DoubleCash") and 2 or 1
+	return self.Stats.Income * (1 + bonus) * Config.GetRebirthMultiplier(rebirths) * pass
 end
 
 function Plot:GetSpawnInterval()
@@ -535,6 +564,47 @@ function Plot:UpdateOwnerAttributes()
 	owner:SetAttribute("IncomeMult", math.floor(self:GetIncomeMultiplier() * 100 + 0.5) / 100)
 	owner:SetAttribute("AutoCollect", self.Stats.AutoCollect)
 	owner:SetAttribute("Register", self.Register)
+	local rebirths = self.Data and self.Data.Rebirths or 0
+	owner:SetAttribute("RebirthCost", Config.GetRebirthCost(rebirths))
+	owner:SetAttribute("RebirthItemOwned", self.Owned[Config.Rebirth.RequiredItem] == true)
+end
+
+---------------------------------------------------------------------
+-- Rebirth: reset the gym + cash for a permanent income multiplier
+---------------------------------------------------------------------
+function Plot:Rebirth(player)
+	if player ~= self.Owner or not self.Data then
+		return
+	end
+	local data = self.Data
+	local required = Config.ItemsById[Config.Rebirth.RequiredItem]
+	if not data.Owned[Config.Rebirth.RequiredItem] then
+		Remotes.Notify(player, "You need the " .. (required and required.Name or "final item") .. " to rebirth!", RED)
+		return
+	end
+	local cost = Config.GetRebirthCost(data.Rebirths)
+	if data.Cash < cost then
+		Remotes.Notify(player, "You need $" .. Config.FormatNumber(cost) .. " to rebirth!", RED)
+		return
+	end
+
+	DataService.AddRebirth(player)
+	DataService.SetCash(player, Config.StartingCash)
+	table.clear(data.Owned)
+
+	self:Release()
+	self:Claim(player, data)
+
+	local character = player.Character
+	if character and character:FindFirstChild("HumanoidRootPart") then
+		character:PivotTo(self:GetSpawnCFrame())
+	end
+	Remotes.Notify(
+		player,
+		("🔁 REBIRTH #%d! Income is now permanently x%.1f"):format(data.Rebirths, Config.GetRebirthMultiplier(data.Rebirths)),
+		GOLD
+	)
+	task.spawn(DataService.Save, player)
 end
 
 function Plot:_updateRegister()

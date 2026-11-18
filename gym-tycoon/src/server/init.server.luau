@@ -1,7 +1,7 @@
 --!nonstrict
 -- GymServer (Script in ServerScriptService)
 -- Entry point: sets up the world, creates the gym plots and hands one to each player.
--- Children ModuleScripts: Builder, Customer, DataService, Plot, Remotes
+-- Children ModuleScripts: Builder, Customer, DataService, GamePasses, Plot, Remotes, Rig, Staff
 
 local Players = game:GetService("Players")
 local PhysicsService = game:GetService("PhysicsService")
@@ -11,7 +11,8 @@ local Lighting = game:GetService("Lighting")
 local Config = require(ReplicatedStorage:WaitForChild("GymConfig"))
 local Remotes = require(script.Remotes)
 local DataService = require(script.DataService)
-local Customer = require(script.Customer)
+local GamePasses = require(script.GamePasses)
+local Rig = require(script.Rig)
 local Plot = require(script.Plot)
 
 ---------------------------------------------------------------------
@@ -59,7 +60,7 @@ for i = 1, Config.PlotCount do
 	plots[i] = Plot.new(i, CFrame.new(x, Config.FloorHeight, 0), plotsFolder)
 end
 
-Customer.Preload()
+Rig.Preload()
 
 local playerPlots = {}
 
@@ -119,6 +120,14 @@ local function onPlayerAdded(player)
 		plot:UpdateOwnerAttributes()
 	end)
 
+	-- Gamepasses: re-apply bonuses whenever a pass is granted
+	player.AttributeChanged:Connect(function(attribute)
+		if string.sub(attribute, 1, 5) == "Pass_" and plot.Owner == player then
+			plot:_recalculate()
+		end
+	end)
+	GamePasses.Load(player)
+
 	player.CharacterAdded:Connect(function(character)
 		onCharacterAdded(player, character)
 	end)
@@ -134,7 +143,20 @@ for _, player in Players:GetPlayers() do
 	task.spawn(onPlayerAdded, player)
 end
 
+local rebirthCooldown = {}
+Remotes.RequestRebirth.OnServerEvent:Connect(function(player)
+	if (rebirthCooldown[player] or 0) > os.clock() then
+		return
+	end
+	rebirthCooldown[player] = os.clock() + 3
+	local plot = playerPlots[player]
+	if plot then
+		plot:Rebirth(player)
+	end
+end)
+
 Players.PlayerRemoving:Connect(function(player)
+	rebirthCooldown[player] = nil
 	local plot = playerPlots[player]
 	playerPlots[player] = nil
 	if plot and plot.Owner == player then

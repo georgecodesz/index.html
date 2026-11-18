@@ -370,6 +370,22 @@ function Builders.BoxingRing(c)
 	}
 end
 
+function Builders.DJBooth(c)
+	c:Part("Desk", Vector3.new(5, 3, 2), Vector3.new(0, 1.5, 0), C.Black)
+	c:Part("Stripe", Vector3.new(5.04, 0.4, 2.04), Vector3.new(0, 2.2, 0), C.Purple, M.Neon)
+	for _, x in { -1.4, 1.4 } do
+		c:Cylinder("Turntable", 0.15, 1.6, Vector3.new(x, 3.08, 0), "Y", C.Dark)
+	end
+	c:Part("Mixer", Vector3.new(0.8, 0.2, 1), Vector3.new(0, 3.1, 0), C.Metal)
+	local glow = c:Part("Glow", Vector3.new(4, 0.2, 0.2), Vector3.new(0, 3.1, 1), C.Cyan, M.Neon)
+	local light = Instance.new("PointLight")
+	light.Color = C.Purple
+	light.Range = 18
+	light.Brightness = 2
+	light.Parent = glow
+	return nil
+end
+
 ---------------------------------------------------------------------
 -- Decor (origin = plot centre)
 ---------------------------------------------------------------------
