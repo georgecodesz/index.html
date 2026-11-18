@@ -1,0 +1,23 @@
+{
+  "name": "GymTycoon",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "GymConfig": {
+        "$path": "src/shared/GymConfig.luau"
+      }
+    },
+    "ServerScriptService": {
+      "GymServer": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "GymHUD": {
+          "$path": "src/client/GymHUD.client.luau"
+        }
+      }
+    }
+  }
+}
